@@ -40,6 +40,8 @@ const QuestionManagement = React.lazy(() => import('./pages/admin/QuestionManage
 const UserManagement = React.lazy(() => import('./pages/admin/UserManagement').then(module => ({ default: module.UserManagement })));
 const DatasetManagement = React.lazy(() => import('./pages/admin/DatasetManagement').then(module => ({ default: module.DatasetManagement })));
 const SystemSettings = React.lazy(() => import('./pages/admin/SystemSettings').then(module => ({ default: module.SystemSettings })));
+const ProfilePage = React.lazy(() => import('./pages/profile/ProfilePage').then(module => ({ default: module.ProfilePage })));
+const AdminProfilePage = React.lazy(() => import('./pages/admin/AdminProfilePage').then(module => ({ default: module.AdminProfilePage })));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage').then(module => ({ default: module.NotFoundPage })));
 const AccessDeniedPage = React.lazy(() => import('./pages/AccessDeniedPage').then(module => ({ default: module.AccessDeniedPage })));
 
@@ -127,8 +129,11 @@ const App = () => {
 
               {/* Utilities */}
               <Route path="chat" element={<Suspense fallback={<Loading />}><AIChatPage /></Suspense>} />
-              <Route path="profile" element={<div className="p-4">Profile Page Placeholder</div>} />
+              <Route path="profile" element={<Suspense fallback={<Loading />}><ProfilePage /></Suspense>} />
               <Route path="settings" element={<div className="p-4">Settings Page Placeholder</div>} />
+              
+              {/* Admin Profile */}
+              <Route path="admin/profile" element={<ProtectedRoute requireAdmin={true}><Suspense fallback={<Loading />}><AdminProfilePage /></Suspense></ProtectedRoute>} />
 
               {/* Protected 404 */}
               <Route path="*" element={<Suspense fallback={<Loading />}><NotFoundPage /></Suspense>} />
