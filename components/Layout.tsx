@@ -10,7 +10,8 @@ import {
   User as UserIcon,
   Bot,
   ClipboardCheck,
-  BrainCircuit
+  BrainCircuit,
+  BarChart2
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Button } from './ui/Button';
@@ -82,6 +83,7 @@ export const Layout = () => {
           <NavItem to="/" icon={LayoutDashboard} onClick={closeSidebar}>Dashboard</NavItem>
           <NavItem to="/assessments" icon={ClipboardCheck} onClick={closeSidebar}>Assessments</NavItem>
           <NavItem to="/interview" icon={BrainCircuit} onClick={closeSidebar}>Interview Prep</NavItem>
+          <NavItem to="/analytics" icon={BarChart2} onClick={closeSidebar}>Analytics</NavItem>
           <NavItem to="/chat" icon={Bot} onClick={closeSidebar}>AI Chat</NavItem>
           <NavItem to="/profile" icon={UserIcon} onClick={closeSidebar}>Profile</NavItem>
           <NavItem to="/settings" icon={Settings} onClick={closeSidebar}>Settings</NavItem>

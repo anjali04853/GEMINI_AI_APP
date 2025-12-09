@@ -24,6 +24,8 @@ import { VoiceResultsPage } from './pages/interview/voice/VoiceResultsPage';
 import { BotSetupPage } from './pages/interview/bot/BotSetupPage';
 import { BotInterviewPage } from './pages/interview/bot/BotInterviewPage';
 import { BotResultsPage } from './pages/interview/bot/BotResultsPage';
+import { AnalyticsDashboard } from './pages/analytics/AnalyticsDashboard';
+import { HistoryPage } from './pages/analytics/HistoryPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
@@ -84,6 +86,10 @@ const App = () => {
           <Route path="interview/bot/active" element={<BotInterviewPage />} />
           <Route path="interview/bot/results" element={<BotResultsPage />} />
           
+          {/* Analytics Routes */}
+          <Route path="analytics" element={<AnalyticsDashboard />} />
+          <Route path="analytics/history" element={<HistoryPage />} />
+
           {/* Utilities */}
           <Route path="chat" element={<AIChatPage />} />
           <Route path="profile" element={<div className="p-4">Profile Page Placeholder</div>} />
