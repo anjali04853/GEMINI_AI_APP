@@ -67,47 +67,49 @@ export const LandingPage = () => {
         </div>
 
         {/* Floating Cards Illustration */}
-        <div className="mt-20 relative max-w-5xl mx-auto h-[400px] hidden lg:block">
-           {/* Card 1: Quiz */}
-           <div className="absolute left-10 top-10 bg-white p-6 rounded-2xl shadow-xl border border-slate-100 w-64 animate-float" style={{ animationDelay: '0s' }}>
-              <div className="flex items-center space-x-3 mb-4">
-                 <div className="p-2 bg-blue-100 rounded-lg text-blue-600"><Code size={20} /></div>
-                 <div className="font-semibold text-slate-800">React Quiz</div>
+        <div className="mt-20 max-w-5xl mx-auto px-4 hidden lg:block">
+           <div className="grid grid-cols-3 gap-6 items-stretch">
+              {/* Card 1: Quiz */}
+              <div className="bg-white p-6 rounded-2xl shadow-xl border border-slate-100 flex flex-col animate-float" style={{ animationDelay: '0s' }}>
+                 <div className="flex items-center space-x-3 mb-4">
+                    <div className="p-2 bg-blue-100 rounded-lg text-blue-600"><Code size={20} /></div>
+                    <div className="font-semibold text-slate-800">React Quiz</div>
+                 </div>
+                 <div className="space-y-2 flex-grow">
+                    <div className="h-2 bg-slate-100 rounded-full w-3/4"></div>
+                    <div className="h-2 bg-slate-100 rounded-full w-1/2"></div>
+                 </div>
+                 <div className="mt-4 flex justify-between items-center text-xs text-slate-500">
+                    <span>Score: 92%</span>
+                    <span className="text-green-500 font-bold">+12%</span>
+                 </div>
               </div>
-              <div className="space-y-2">
-                 <div className="h-2 bg-slate-100 rounded-full w-3/4"></div>
-                 <div className="h-2 bg-slate-100 rounded-full w-1/2"></div>
-              </div>
-              <div className="mt-4 flex justify-between items-center text-xs text-slate-500">
-                 <span>Score: 92%</span>
-                 <span className="text-green-500 font-bold">+12%</span>
-              </div>
-           </div>
 
-           {/* Card 2: Voice */}
-           <div className="absolute right-10 top-20 bg-white p-6 rounded-2xl shadow-xl border border-slate-100 w-64 animate-float" style={{ animationDelay: '1s' }}>
-              <div className="flex items-center space-x-3 mb-4">
-                 <div className="p-2 bg-orange-100 rounded-lg text-orange-600"><Mic size={20} /></div>
-                 <div className="font-semibold text-slate-800">Voice Analysis</div>
+              {/* Card 2: Stats */}
+              <div className="bg-white p-6 rounded-2xl shadow-2xl border-2 border-brand-purple/10 flex flex-col animate-float" style={{ animationDelay: '1s' }}>
+                 <div className="flex items-center space-x-3 mb-4">
+                    <div className="p-2 bg-brand-purple/10 rounded-lg text-brand-purple"><BarChart2 size={20} /></div>
+                    <div className="font-semibold text-slate-800">Weekly Progress</div>
+                 </div>
+                 <div className="flex items-end justify-between h-24 gap-2 flex-grow">
+                    {[40, 60, 45, 70, 85, 65, 90].map((h, i) => (
+                       <div key={i} className="w-full bg-gradient-to-t from-brand-purple to-brand-turquoise rounded-t-sm opacity-80" style={{ height: `${h}%` }}></div>
+                    ))}
+                 </div>
               </div>
-              <div className="flex items-center gap-1 h-8 mb-2">
-                 {[1,2,3,4,5,6].map(i => (
-                    <div key={i} className="w-2 bg-orange-400 rounded-full" style={{ height: `${Math.random() * 20 + 10}px` }}></div>
-                 ))}
-              </div>
-              <div className="text-xs text-slate-500">Confidence Level: High</div>
-           </div>
 
-           {/* Card 3: Stats */}
-           <div className="absolute left-1/2 top-40 -translate-x-1/2 bg-white p-6 rounded-2xl shadow-2xl border-2 border-brand-purple/10 w-72 animate-float" style={{ animationDelay: '2s' }}>
-              <div className="flex items-center space-x-3 mb-4">
-                 <div className="p-2 bg-brand-purple/10 rounded-lg text-brand-purple"><BarChart2 size={20} /></div>
-                 <div className="font-semibold text-slate-800">Weekly Progress</div>
-              </div>
-              <div className="flex items-end justify-between h-24 gap-2">
-                 {[40, 60, 45, 70, 85, 65, 90].map((h, i) => (
-                    <div key={i} className="w-full bg-gradient-to-t from-brand-purple to-brand-turquoise rounded-t-sm opacity-80" style={{ height: `${h}%` }}></div>
-                 ))}
+              {/* Card 3: Voice */}
+              <div className="bg-white p-6 rounded-2xl shadow-xl border border-slate-100 flex flex-col animate-float" style={{ animationDelay: '2s' }}>
+                 <div className="flex items-center space-x-3 mb-4">
+                    <div className="p-2 bg-orange-100 rounded-lg text-orange-600"><Mic size={20} /></div>
+                    <div className="font-semibold text-slate-800">Voice Analysis</div>
+                 </div>
+                 <div className="flex items-center gap-1 h-8 mb-2 flex-grow">
+                    {[1,2,3,4,5,6].map(i => (
+                       <div key={i} className="w-2 bg-orange-400 rounded-full" style={{ height: `${Math.random() * 20 + 10}px` }}></div>
+                    ))}
+                 </div>
+                 <div className="text-xs text-slate-500">Confidence Level: High</div>
               </div>
            </div>
         </div>
