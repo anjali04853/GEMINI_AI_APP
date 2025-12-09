@@ -5,8 +5,7 @@ import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Bot, CheckCircle2 } from 'lucide-react';
+import { Bot, CheckCircle2, Mail, ArrowLeft } from 'lucide-react';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -32,51 +31,71 @@ export const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <Bot className="h-8 w-8 text-blue-600" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-brand-lavender to-white p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 p-8 relative overflow-hidden">
+        {/* Decorative Top Bar */}
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-purple to-brand-turquoise"></div>
+        
+        <div className="text-center mb-8">
+            <Link to="/login" className="absolute top-8 left-8 text-slate-400 hover:text-slate-600">
+                <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div className="h-16 w-16 bg-brand-offWhite rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-lg">
+                <Bot className="h-8 w-8 text-brand-purple" />
             </div>
-          </div>
-          <CardTitle className="text-2xl">Forgot password</CardTitle>
-          <CardDescription>
-            Enter your email address and we'll send you a link to reset your password
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isSubmitted ? (
-            <div className="flex flex-col items-center justify-center space-y-4 py-4">
-              <CheckCircle2 className="h-12 w-12 text-green-500" />
-              <p className="text-center text-slate-600">
-                If an account exists for that email, we have sent password reset instructions.
-              </p>
-              <Button onClick={() => setIsSubmitted(false)} variant="outline">
+            <h1 className="text-2xl font-bold text-slate-900">Reset Password</h1>
+        </div>
+
+        {isSubmitted ? (
+        <div className="flex flex-col items-center justify-center space-y-6 py-4 animate-in fade-in zoom-in duration-300">
+            <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="h-10 w-10 text-green-600" />
+            </div>
+            <div className="text-center space-y-2">
+                <h3 className="text-lg font-semibold text-slate-900">Check your email</h3>
+                <p className="text-slate-500 text-sm max-w-xs mx-auto">
+                    We've sent password reset instructions to your email address.
+                </p>
+            </div>
+            <Button onClick={() => setIsSubmitted(false)} variant="outline" className="w-full">
                 Try another email
-              </Button>
+            </Button>
+            <Link to="/login" className="text-sm font-medium text-brand-purple hover:underline">
+                Return to Login
+            </Link>
+        </div>
+        ) : (
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="text-center mb-6">
+                <p className="text-slate-500 text-sm">
+                    Enter your email address and we'll send you a link to reset your password.
+                </p>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <Input
-                label="Email"
-                type="email"
-                placeholder="name@example.com"
-                error={errors.email?.message}
-                {...register('email')}
-              />
-              <Button type="submit" className="w-full" isLoading={isLoading}>
+
+            <div className="relative">
+                <Input
+                    label="Email Address"
+                    type="email"
+                    placeholder="name@example.com"
+                    error={errors.email?.message}
+                    {...register('email')}
+                    className="pl-10"
+                />
+                <Mail className="absolute left-3 top-[34px] h-5 w-5 text-slate-400 pointer-events-none" />
+            </div>
+
+            <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
                 Send Reset Link
-              </Button>
-            </form>
-          )}
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <Link to="/login" className="text-sm font-medium text-blue-600 hover:text-blue-500">
-            Back to login
-          </Link>
-        </CardFooter>
-      </Card>
+            </Button>
+            
+            <div className="text-center mt-4">
+                 <Link to="/login" className="text-sm text-slate-500 hover:text-slate-800 font-medium">
+                    Back to login
+                 </Link>
+            </div>
+        </form>
+        )}
+      </div>
     </div>
   );
 };

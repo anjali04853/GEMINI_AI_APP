@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,8 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Bot, Shield } from 'lucide-react';
+import { Bot, Shield, ArrowRight } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -43,35 +41,38 @@ export const LoginPage = () => {
         'fake-jwt-token'
       );
       setIsLoading(false);
-      navigate(isAdmin ? '/admin' : '/');
+      navigate(isAdmin ? '/admin' : '/dashboard');
     }, 1000);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <Bot className="h-8 w-8 text-blue-600" />
-            </div>
+    <div className="min-h-screen flex bg-white">
+      {/* Left Side - Form */}
+      <div className="flex-1 flex items-center justify-center p-8 sm:p-12 lg:p-16">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center sm:text-left">
+            <Link to="/" className="inline-flex items-center space-x-2 text-brand-purple mb-8">
+              <div className="h-8 w-8 bg-brand-purple rounded-lg flex items-center justify-center">
+                <Bot className="h-5 w-5 text-white" />
+              </div>
+              <span className="font-bold text-xl tracking-tight text-slate-900">GeminiApp</span>
+            </Link>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Welcome back</h1>
+            <p className="mt-2 text-slate-500">
+              Please enter your details to sign in.
+            </p>
           </div>
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
-          <CardDescription>
-            Enter your email to sign in to your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input
-              label="Email"
-              type="email"
-              placeholder="name@example.com"
-              error={errors.email?.message}
-              {...register('email')}
-            />
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-4">
+              <Input
+                label="Email"
+                type="email"
+                placeholder="name@example.com"
+                error={errors.email?.message}
+                {...register('email')}
+              />
+              <div>
                 <Input
                   label="Password"
                   type="password"
@@ -79,37 +80,60 @@ export const LoginPage = () => {
                   error={errors.password?.message}
                   {...register('password')}
                 />
-              </div>
-              <div className="flex justify-end">
-                <Link 
-                  to="/forgot-password" 
-                  className="text-sm font-medium text-blue-600 hover:text-blue-500"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-            </div>
-            <div className="bg-blue-50 p-3 rounded-md text-xs text-blue-800 flex items-start gap-2">
-              <Shield className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <div>
-                <p><strong>Admin Demo:</strong> Use <code>admin@example.com</code> to access the admin panel.</p>
-                <p><strong>User Demo:</strong> Use any other email.</p>
+                <div className="flex justify-end mt-1">
+                  <Link 
+                    to="/forgot-password" 
+                    className="text-sm font-medium text-brand-purple hover:text-brand-darkPurple"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
               </div>
             </div>
-            <Button type="submit" className="w-full" isLoading={isLoading}>
-              Sign In
+
+            <Button type="submit" className="w-full" isLoading={isLoading} size="lg">
+              Sign In <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
+
+            <div className="bg-brand-lavender/50 p-4 rounded-xl border border-brand-purple/10 flex items-start gap-3">
+              <Shield className="h-5 w-5 text-brand-purple mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-slate-700">
+                <p><strong>Admin:</strong> admin@example.com</p>
+                <p><strong>User:</strong> any other email</p>
+              </div>
+            </div>
           </form>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-slate-500">
+
+          <p className="text-center text-sm text-slate-500">
             Don't have an account?{' '}
-            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
-              Sign up
+            <Link to="/register" className="font-semibold text-brand-purple hover:text-brand-darkPurple transition-colors">
+              Sign up for free
             </Link>
           </p>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
+
+      {/* Right Side - Visual */}
+      <div className="hidden lg:flex flex-1 relative bg-slate-900 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-purple via-brand-darkPurple to-slate-900 opacity-90"></div>
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-50"></div>
+        
+        <div className="relative z-10 flex flex-col justify-center px-16 text-white h-full max-w-2xl">
+           <div className="mb-8 p-4 bg-white/10 backdrop-blur-md rounded-2xl w-fit border border-white/20">
+              <Bot className="h-10 w-10 text-brand-turquoise" />
+           </div>
+           <h2 className="text-4xl font-bold mb-6 leading-tight">
+              Unlock your potential with AI-driven insights.
+           </h2>
+           <p className="text-lg text-slate-300 leading-relaxed">
+              Join thousands of developers mastering their craft through intelligent assessments and real-time coaching.
+           </p>
+           
+           {/* Decorative floating elements */}
+           <div className="absolute top-1/4 right-10 w-20 h-20 bg-brand-turquoise rounded-full blur-2xl opacity-20 animate-pulse-glow"></div>
+           <div className="absolute bottom-1/4 left-10 w-32 h-32 bg-brand-pink rounded-full blur-3xl opacity-20 animate-blob"></div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -6,6 +6,7 @@ import { Loading, FullPageLoading } from './components/Loading';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Lazy Load Pages
+const LandingPage = React.lazy(() => import('./pages/LandingPage').then(module => ({ default: module.LandingPage })));
 const LoginPage = React.lazy(() => import('./pages/auth/LoginPage').then(module => ({ default: module.LoginPage })));
 const RegisterPage = React.lazy(() => import('./pages/auth/RegisterPage').then(module => ({ default: module.RegisterPage })));
 const ForgotPasswordPage = React.lazy(() => import('./pages/auth/ForgotPasswordPage').then(module => ({ default: module.ForgotPasswordPage })));
@@ -43,7 +44,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children?: React.R
     return <Navigate to="/login" replace />;
   }
   if (requireAdmin && user.role !== 'admin') {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   return <>{children}</>;
 };
@@ -52,7 +53,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children?: React.R
 const PublicRoute = ({ children }: { children?: React.ReactNode }) => {
   const { user } = useAuthStore();
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   return <>{children}</>;
 };
@@ -63,13 +64,14 @@ const App = () => {
       <Suspense fallback={<FullPageLoading />}>
         <HashRouter>
           <Routes>
-            {/* Auth Routes */}
+            {/* Public Routes */}
+            <Route path="/" element={<PublicRoute><Suspense fallback={<Loading />}><LandingPage /></Suspense></PublicRoute>} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
 
-            {/* Protected Routes */}
-            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            {/* Protected Dashboard Routes */}
+            <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Suspense fallback={<Loading />}><Dashboard /></Suspense>} />
               
               {/* Assessment Routes */}
@@ -116,16 +118,12 @@ const App = () => {
               <Route path="profile" element={<div className="p-4">Profile Page Placeholder</div>} />
               <Route path="settings" element={<div className="p-4">Settings Page Placeholder</div>} />
 
-               {/* 404 Route - This must be inside Layout to keep sidebar, or outside to be fullscreen. Let's keep inside Layout for logged in users? 
-                   Actually, generic 404 is usually fullscreen or Layout-wrapped. Let's put a catch-all route here for authenticated 404s.
-                */}
+              {/* Protected 404 */}
               <Route path="*" element={<Suspense fallback={<Loading />}><NotFoundPage /></Suspense>} />
             </Route>
 
-            {/* Fallback for unauthenticated or strict 404s outside layout */}
-            {/* <Route path="*" element={<Navigate to="/" replace />} /> - replaced with actual 404 page if desired, but Navigate is safer for "catch all to login" logic.
-                However, for "Page Not Found", let's route to the 404 page if not matched above.
-            */}
+            {/* Fallback for unauthenticated strict 404s outside dashboard */}
+             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </HashRouter>
       </Suspense>
