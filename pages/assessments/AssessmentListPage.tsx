@@ -1,22 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Sparkles } from 'lucide-react';
+import { Search, Filter, Sparkles, Clock, BarChart, CheckCircle, AlertCircle } from 'lucide-react';
 import { Input } from '../../components/ui/Input';
 import { AssessmentCard } from '../../components/assessment/AssessmentCard';
 import { mockAssessments } from '../../data/mockAssessments';
 import { useAssessmentStore } from '../../store/assessmentStore';
 import { Assessment } from '../../types';
 import { cn } from '../../lib/utils';
+import { Modal } from '../../components/ui/Modal';
+import { Button } from '../../components/ui/Button';
 
 export const AssessmentListPage = () => {
   const navigate = useNavigate();
   const startAssessment = useAssessmentStore(state => state.startAssessment);
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [activeFilter, setActiveFilter] = React.useState('All');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
 
   const handleStart = (assessment: Assessment) => {
-    startAssessment(assessment);
-    navigate(`/assessments/${assessment.id}`);
+    setSelectedAssessment(assessment);
+  };
+  
+  const confirmStart = () => {
+    if (selectedAssessment) {
+      startAssessment(selectedAssessment);
+      navigate(`/dashboard/assessments/${selectedAssessment.id}`);
+    }
   };
 
   const categories = ['All', 'Technical', 'Soft Skills', 'Leadership'];
@@ -29,6 +38,66 @@ export const AssessmentListPage = () => {
   });
 
   return (
+    <>
+    {/* Start Assessment Modal */}
+    <Modal 
+      isOpen={!!selectedAssessment} 
+      onClose={() => setSelectedAssessment(null)} 
+      title="Start Assessment"
+      size="lg"
+    >
+      {selectedAssessment && (
+        <div className="p-6 space-y-6">
+          <div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">{selectedAssessment.title}</h3>
+            <p className="text-slate-600">{selectedAssessment.description}</p>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 bg-slate-50 rounded-xl text-center">
+              <Clock className="h-5 w-5 text-brand-purple mx-auto mb-2" />
+              <p className="text-sm font-bold text-slate-900">{selectedAssessment.durationMinutes} min</p>
+              <p className="text-xs text-slate-500">Duration</p>
+            </div>
+            <div className="p-4 bg-slate-50 rounded-xl text-center">
+              <BarChart className="h-5 w-5 text-brand-turquoise mx-auto mb-2" />
+              <p className="text-sm font-bold text-slate-900">{selectedAssessment.questions.length}</p>
+              <p className="text-xs text-slate-500">Questions</p>
+            </div>
+            <div className="p-4 bg-slate-50 rounded-xl text-center">
+              <CheckCircle className="h-5 w-5 text-brand-pink mx-auto mb-2" />
+              <p className="text-sm font-bold text-slate-900">{selectedAssessment.difficulty}</p>
+              <p className="text-xs text-slate-500">Difficulty</p>
+            </div>
+          </div>
+          
+          <div className="bg-brand-yellow/10 border border-brand-yellow/30 rounded-xl p-4">
+            <div className="flex gap-3">
+              <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-semibold text-yellow-800 mb-1">Instructions</p>
+                <ul className="text-yellow-700 space-y-1">
+                  <li>• Answer all questions within the time limit</li>
+                  <li>• You can flag questions to review later</li>
+                  <li>• Progress is auto-saved every 30 seconds</li>
+                  <li>• You cannot go back after submitting</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => setSelectedAssessment(null)} className="flex-1">
+              Cancel
+            </Button>
+            <Button onClick={confirmStart} className="flex-1">
+              Start Now
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
+    
     <div className="relative min-h-[calc(100vh-100px)]">
       {/* Background Blobs */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
@@ -105,5 +174,6 @@ export const AssessmentListPage = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };

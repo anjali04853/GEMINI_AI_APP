@@ -18,7 +18,7 @@ export const QuizResultsPage = () => {
   const session = sessions.find(s => s.id === sessionId);
 
   if (!sessionId || !session) {
-    return <Navigate to="/interview" replace />;
+    return <Navigate to="/dashboard/interview" replace />;
   }
 
   // Assuming session.questions is populated (based on store updates logic)
@@ -245,13 +245,13 @@ export const QuizResultsPage = () => {
 
       {/* Action Footer */}
       <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-        <Link to="/interview">
+        <Link to="/dashboard/interview">
           <Button variant="outline" className="w-full sm:w-auto h-12 px-8 border-slate-200">
             <LayoutDashboard className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Button>
         </Link>
-        <Link to="/interview/setup">
+        <Link to="/dashboard/interview/setup">
           <Button className="w-full sm:w-auto h-12 px-8 bg-brand-pink hover:bg-pink-600 shadow-lg shadow-brand-pink/20">
             <RefreshCw className="mr-2 h-4 w-4" />
             Start New Quiz

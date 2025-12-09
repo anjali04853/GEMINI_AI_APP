@@ -63,7 +63,7 @@ export const AnalyticsDashboard = () => {
                <button className="px-3 py-1 rounded-md text-slate-500 hover:text-slate-900">30 Days</button>
                <button className="px-3 py-1 rounded-md text-slate-500 hover:text-slate-900">3 Months</button>
             </div>
-            <Link to="/analytics/report">
+            <Link to="/dashboard/analytics/report">
                 <Button className="bg-brand-purple hover:bg-brand-darkPurple shadow-lg shadow-brand-purple/20">
                     <FileText className="mr-2 h-4 w-4" />
                     Full Report
@@ -222,7 +222,7 @@ export const AnalyticsDashboard = () => {
       
       {/* History Link */}
       <div className="flex justify-center">
-         <Link to="/analytics/history">
+         <Link to="/dashboard/analytics/history">
             <Button variant="outline" className="text-slate-500 hover:text-brand-purple border-slate-200">
                 View Full Session History
                 <ArrowRight className="ml-2 h-4 w-4" />

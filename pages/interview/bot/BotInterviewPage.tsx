@@ -4,6 +4,7 @@ import { GoogleGenAI, LiveServerMessage, Modality, type Blob as GenAIBlob } from
 import { Mic, MicOff, PhoneOff, User, Bot, Volume2, MoreHorizontal, LogOut, PauseCircle, PlayCircle, StopCircle, Radio } from 'lucide-react';
 import { useVoiceBotStore } from '../../../store/voiceBotStore';
 import { Button } from '../../../components/ui/Button';
+import { useToast } from '../../../components/ui/Toast';
 import { cn, generateId } from '../../../lib/utils';
 import { BotTranscriptItem } from '../../../types';
 import { Badge } from '../../../components/ui/Badge';
@@ -55,6 +56,7 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
 
 export const BotInterviewPage = () => {
   const navigate = useNavigate();
+  const { addToast } = useToast();
   const { activeConfig, saveBotSession } = useVoiceBotStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   
@@ -100,7 +102,7 @@ export const BotInterviewPage = () => {
   }, []);
 
   if (!activeConfig) {
-    return <Navigate to="/interview/bot/setup" replace />;
+    return <Navigate to="/dashboard/interview/bot/setup" replace />;
   }
 
   const initializeAudio = async () => {
@@ -249,7 +251,8 @@ export const BotInterviewPage = () => {
   const handleEndSession = () => {
     disconnect();
     const sessionId = saveBotSession(transcript, duration);
-    navigate(`/interview/bot/results?session=${sessionId}`);
+    addToast('Live interview completed successfully! 🎉', 'success');
+    navigate(`/dashboard/interview/bot/results?session=${sessionId}`);
   };
 
   return (

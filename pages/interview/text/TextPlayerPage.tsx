@@ -6,11 +6,13 @@ import { useTextInterviewStore } from '../../../store/textInterviewStore';
 import { Card, CardContent, CardFooter, CardHeader } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import { useToast } from '../../../components/ui/Toast';
 import { cn } from '../../../lib/utils';
 import { Tooltip } from '../../../components/ui/Tooltip';
 
 export const TextPlayerPage = () => {
   const navigate = useNavigate();
+  const { addToast } = useToast();
   const { 
     activeQuestions, 
     currentQuestionIndex, 
@@ -40,8 +42,20 @@ export const TextPlayerPage = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Auto-save every 30 seconds
+  useEffect(() => {
+    const autoSaveTimer = setInterval(() => {
+      if (currentAnswer && currentAnswer.trim()) {
+        setSavedStatus('Auto-saving...');
+        // Answer is already saved via updateAnswer on change, this just shows feedback
+        setTimeout(() => setSavedStatus('Auto-saved'), 500);
+      }
+    }, 30000);
+    return () => clearInterval(autoSaveTimer);
+  }, [currentAnswer]);
+
   if (!isInterviewActive || activeQuestions.length === 0) {
-    return <Navigate to="/interview" replace />;
+    return <Navigate to="/dashboard/interview" replace />;
   }
 
   const currentQ = activeQuestions[currentQuestionIndex];
@@ -65,7 +79,8 @@ export const TextPlayerPage = () => {
 
   const handleSubmit = () => {
     const sessionId = submitInterview();
-    navigate(`/interview/text/results?session=${sessionId}`);
+    addToast('Interview submitted successfully! 🎉', 'success');
+    navigate(`/dashboard/interview/text/results?session=${sessionId}`);
   };
 
   const handleClear = () => {
@@ -117,7 +132,7 @@ export const TextPlayerPage = () => {
          </div>
 
          <div className="mt-auto pt-6 flex justify-center">
-            <Button variant="ghost" className="text-xs text-slate-400 hover:text-red-500" onClick={() => navigate('/interview')}>
+            <Button variant="ghost" className="text-xs text-slate-400 hover:text-red-500" onClick={() => navigate('/dashboard/interview')}>
                 <AlertCircle className="h-3 w-3 mr-1" />
                 Quit Session
             </Button>

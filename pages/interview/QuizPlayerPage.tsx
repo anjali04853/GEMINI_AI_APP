@@ -1,15 +1,20 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Clock, AlertCircle, CheckCircle2, Send } from 'lucide-react';
 import { useInterviewStore } from '../../store/interviewStore';
 import { Card, CardContent, CardFooter, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { Modal } from '../../components/ui/Modal';
+import { useToast } from '../../components/ui/Toast';
 import { cn } from '../../lib/utils';
 
 export const QuizPlayerPage = () => {
   const navigate = useNavigate();
+  const { addToast } = useToast();
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  
   const { 
     activeQuestions, 
     currentQuestionIndex, 
@@ -44,11 +49,20 @@ export const QuizPlayerPage = () => {
 
   const handleSubmit = () => {
     const sessionId = submitQuiz();
-    navigate(`/interview/results?session=${sessionId}`);
+    addToast('Quiz submitted successfully! 🎉', 'success');
+    navigate(`/dashboard/interview/results?session=${sessionId}`);
   };
+  
+  const confirmSubmit = () => {
+    setShowSubmitModal(false);
+    handleSubmit();
+  };
+  
+  const answeredCount = Object.keys(answers).length;
+  const unansweredCount = activeQuestions.length - answeredCount;
 
   if (!isQuizActive || activeQuestions.length === 0) {
-    return <Navigate to="/interview" replace />;
+    return <Navigate to="/dashboard/interview" replace />;
   }
 
   const currentQ = activeQuestions[currentQuestionIndex];
@@ -71,6 +85,37 @@ export const QuizPlayerPage = () => {
   const optionLabels = ['A', 'B', 'C', 'D'];
 
   return (
+    <>
+    {/* Submit Confirmation Modal */}
+    <Modal isOpen={showSubmitModal} onClose={() => setShowSubmitModal(false)} title="Submit Quiz?">
+      <div className="p-6 space-y-4">
+        <div className="text-center">
+          <div className="text-4xl font-bold text-brand-purple mb-2">{answeredCount}/{activeQuestions.length}</div>
+          <p className="text-slate-500">Questions Answered</p>
+        </div>
+        
+        {unansweredCount > 0 && (
+          <div className="bg-brand-yellow/10 border border-brand-yellow/30 rounded-xl p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-yellow-700">
+              You have <strong>{unansweredCount} unanswered question{unansweredCount > 1 ? 's' : ''}</strong>. 
+              Unanswered questions will be marked as incorrect.
+            </p>
+          </div>
+        )}
+        
+        <div className="flex gap-3 pt-2">
+          <Button variant="secondary" onClick={() => setShowSubmitModal(false)} className="flex-1">
+            Continue Quiz
+          </Button>
+          <Button onClick={confirmSubmit} className="flex-1 bg-brand-pink hover:bg-pink-600">
+            <Send className="h-4 w-4 mr-2" />
+            Submit Quiz
+          </Button>
+        </div>
+      </div>
+    </Modal>
+    
     <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 pb-10">
       
       {/* Main Content Area */}
@@ -144,8 +189,9 @@ export const QuizPlayerPage = () => {
                 </Button>
                 
                 {isLast ? (
-                    <Button onClick={handleSubmit} className="bg-brand-pink hover:bg-pink-600 text-white shadow-lg shadow-brand-pink/30 hover:-translate-y-1">
-                        Submit Answer
+                    <Button onClick={() => setShowSubmitModal(true)} className="bg-brand-pink hover:bg-pink-600 text-white shadow-lg shadow-brand-pink/30 hover:-translate-y-1">
+                        <Send className="mr-2 h-4 w-4" />
+                        Finish Quiz
                     </Button>
                 ) : (
                     <Button onClick={nextQuestion} className="bg-brand-purple hover:bg-brand-darkPurple shadow-lg shadow-brand-purple/30 hover:-translate-y-1">
@@ -158,7 +204,7 @@ export const QuizPlayerPage = () => {
         
         <div className="flex justify-center md:hidden">
              {/* Mobile Quit Button */}
-            <Button variant="ghost" className="text-xs text-slate-400 hover:text-red-500" onClick={() => navigate('/interview')}>
+            <Button variant="ghost" className="text-xs text-slate-400 hover:text-red-500" onClick={() => navigate('/dashboard/interview')}>
                 <AlertCircle className="h-3 w-3 mr-1" />
                 Quit Quiz
             </Button>
@@ -211,7 +257,7 @@ export const QuizPlayerPage = () => {
              <Button 
                 variant="outline" 
                 className="w-full mt-8 border-slate-200 text-slate-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200" 
-                onClick={() => navigate('/interview')}
+                onClick={() => navigate('/dashboard/interview')}
              >
                 <AlertCircle className="h-4 w-4 mr-2" />
                 Quit Quiz
@@ -219,5 +265,6 @@ export const QuizPlayerPage = () => {
          </div>
       </div>
     </div>
+    </>
   );
 };

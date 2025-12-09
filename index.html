@@ -3,8 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gemini Core App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>GeminiApp - AI Interview Prep</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
       body {
@@ -12,70 +11,9 @@
         background-color: #F9FAFB;
       }
     </style>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              brand: {
-                purple: '#6C63FF',
-                darkPurple: '#5a52d5',
-                turquoise: '#4ECDC4',
-                pink: '#FF6B9D',
-                lavender: '#E6E6FA',
-                offWhite: '#F9FAFB',
-                sky: '#0EA5E9',
-                yellow: '#FCD34D',
-                charcoal: '#2D3748',
-                darkCharcoal: '#1A202C',
-              }
-            },
-            animation: {
-              'blob': 'blob 7s infinite',
-              'float': 'float 6s ease-in-out infinite',
-              'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            },
-            keyframes: {
-              blob: {
-                '0%': { transform: 'translate(0px, 0px) scale(1)' },
-                '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
-                '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
-                '100%': { transform: 'translate(0px, 0px) scale(1)' },
-              },
-              float: {
-                '0%, 100%': { transform: 'translateY(0)' },
-                '50%': { transform: 'translateY(-20px)' },
-              },
-              'pulse-glow': {
-                '0%, 100%': { opacity: 1, boxShadow: '0 0 20px rgba(108, 99, 255, 0.5)' },
-                '50%': { opacity: .8, boxShadow: '0 0 10px rgba(108, 99, 255, 0.2)' },
-              }
-            }
-          }
-        }
-      }
-    </script>
-  <script type="importmap">
-{
-  "imports": {
-    "tailwind-merge": "https://aistudiocdn.com/tailwind-merge@^3.4.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.32.0",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.10.1",
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "react": "https://aistudiocdn.com/react@^19.2.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
-    "react-hook-form": "https://aistudiocdn.com/react-hook-form@^7.68.0",
-    "zod": "https://aistudiocdn.com/zod@^4.1.13",
-    "zustand/": "https://aistudiocdn.com/zustand@^5.0.9/",
-    "zustand": "https://aistudiocdn.com/zustand@^5.0.9",
-    "clsx": "https://aistudiocdn.com/clsx@^2.1.1",
-    "@hookform/resolvers/": "https://aistudiocdn.com/@hookform/resolvers@^5.2.2/"
-  }
-}
-</script>
-</head>
+  </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>

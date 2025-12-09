@@ -18,7 +18,7 @@ export const VoiceResultsPage = () => {
   const [playingId, setPlayingId] = useState<string | null>(null);
 
   if (!sessionId || !session) {
-    return <Navigate to="/interview" replace />;
+    return <Navigate to="/dashboard/interview" replace />;
   }
 
   // Mock scoring for demo visual
@@ -263,13 +263,13 @@ export const VoiceResultsPage = () => {
       </div>
 
       <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8 border-t border-slate-200">
-        <Link to="/interview">
+        <Link to="/dashboard/interview">
           <Button variant="outline" className="h-12 px-8 border-slate-300 hover:border-slate-400">
             <LayoutDashboard className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Button>
         </Link>
-        <Link to="/interview/voice/setup">
+        <Link to="/dashboard/interview/voice/setup">
           <Button className="h-12 px-8 bg-brand-turquoise hover:bg-teal-500 shadow-lg shadow-brand-turquoise/20">
             <RefreshCw className="mr-2 h-4 w-4" />
             New Voice Session

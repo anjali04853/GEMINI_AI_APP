@@ -84,14 +84,14 @@ export const TextSetupPage = () => {
       customTopics
     });
     
-    navigate('/interview/text/active');
+    navigate('/dashboard/interview/text/active');
   };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-brand-lavender/30 to-brand-offWhite p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/interview')} className="bg-white hover:bg-white/80 shadow-sm">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/interview')} className="bg-white hover:bg-white/80 shadow-sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>

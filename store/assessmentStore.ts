@@ -15,6 +15,10 @@ interface AssessmentState {
   flaggedQuestions: string[];
   isFinished: boolean;
   
+  // Timer State
+  timeRemaining: number; // in seconds
+  timerStarted: number | null; // timestamp when started
+  
   startAssessment: (assessment: Assessment) => void;
   submitAnswer: (questionId: string, answer: string | number | string[]) => void;
   toggleFlag: (questionId: string) => void;
@@ -22,6 +26,7 @@ interface AssessmentState {
   prevQuestion: () => void;
   finishAssessment: () => void;
   resetAssessment: () => void;
+  updateTimer: (seconds: number) => void;
   
   // Computed helpers
   getProgress: () => number;
@@ -37,14 +42,20 @@ export const useAssessmentStore = create<AssessmentState>()(
       responses: {},
       flaggedQuestions: [],
       isFinished: false,
+      timeRemaining: 0,
+      timerStarted: null,
 
       startAssessment: (assessment) => set({
         activeAssessment: assessment,
         currentQuestionIndex: 0,
         responses: {},
         flaggedQuestions: [],
-        isFinished: false
+        isFinished: false,
+        timeRemaining: assessment.durationMinutes * 60,
+        timerStarted: Date.now()
       }),
+      
+      updateTimer: (seconds) => set({ timeRemaining: seconds }),
 
       submitAnswer: (questionId, answer) => set((state) => ({
         responses: { ...state.responses, [questionId]: answer }
@@ -130,7 +141,9 @@ export const useAssessmentStore = create<AssessmentState>()(
         currentQuestionIndex: 0,
         responses: {},
         flaggedQuestions: [],
-        isFinished: false
+        isFinished: false,
+        timeRemaining: 0,
+        timerStarted: null
       }),
 
       getProgress: () => {

@@ -1,9 +1,12 @@
 import React, { Suspense } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { Layout } from './components/Layout';
 import { Loading, FullPageLoading } from './components/Loading';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ToastProvider } from './components/ui/Toast';
+import { OfflineIndicator } from './components/OfflineIndicator';
+import { OnboardingTour } from './components/OnboardingTour';
 
 // Lazy Load Pages
 const LandingPage = React.lazy(() => import('./pages/LandingPage').then(module => ({ default: module.LandingPage })));
@@ -64,8 +67,11 @@ const PublicRoute = ({ children }: { children?: React.ReactNode }) => {
 const App = () => {
   return (
     <ErrorBoundary>
-      <Suspense fallback={<FullPageLoading />}>
-        <HashRouter>
+      <ToastProvider>
+        <Suspense fallback={<FullPageLoading />}>
+          <BrowserRouter>
+          <OfflineIndicator />
+          <OnboardingTour />
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<PublicRoute><Suspense fallback={<Loading />}><LandingPage /></Suspense></PublicRoute>} />
@@ -131,8 +137,9 @@ const App = () => {
             {/* Fallback for unauthenticated strict 404s outside dashboard */}
              <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
-        </HashRouter>
-      </Suspense>
+          </BrowserRouter>
+        </Suspense>
+      </ToastProvider>
     </ErrorBoundary>
   );
 };

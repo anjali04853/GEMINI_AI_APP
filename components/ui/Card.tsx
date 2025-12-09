@@ -21,7 +21,7 @@ export const CardHeader: React.FC<CardProps> = ({ className, children, ...props 
 export const CardTitle: React.FC<React.HTMLAttributes<HTMLHeadingElement>> = ({ className, children, ...props }) => (
   <h3 className={cn("text-2xl font-semibold leading-none tracking-tight", className)} {...props}>
     {children}
-  </div>
+  </h3>
 );
 
 export const CardDescription: React.FC<React.HTMLAttributes<HTMLParagraphElement>> = ({ className, children, ...props }) => (

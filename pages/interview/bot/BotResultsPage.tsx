@@ -15,7 +15,7 @@ export const BotResultsPage = () => {
   const [showFullTranscript, setShowFullTranscript] = useState(false);
 
   if (!sessionId || !session) {
-    return <Navigate to="/interview" replace />;
+    return <Navigate to="/dashboard/interview" replace />;
   }
 
   // Mock scoring logic for display
@@ -205,13 +205,13 @@ export const BotResultsPage = () => {
       </div>
 
       <div className="flex justify-center gap-4 py-8">
-        <Link to="/interview">
+        <Link to="/dashboard/interview">
           <Button variant="outline" className="h-12 px-8">
             <LayoutDashboard className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Button>
         </Link>
-        <Link to="/interview/bot/setup">
+        <Link to="/dashboard/interview/bot/setup">
           <Button className="h-12 px-8 bg-brand-purple hover:bg-brand-darkPurple shadow-lg shadow-brand-purple/20">
             <RefreshCw className="mr-2 h-4 w-4" />
             Start New Session

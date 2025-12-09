@@ -52,13 +52,13 @@ export const AdminDashboard = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div>
-        <h1 className="text-3xl font-bold text-white tracking-tight">Admin Overview</h1>
-        <p className="text-slate-400 mt-1">Platform metrics and health status.</p>
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Admin Overview</h1>
+        <p className="text-slate-500 mt-1">Platform metrics and health status.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {metrics.map((metric, i) => (
-          <Card key={i} className={cn("bg-brand-darkCharcoal border-t-4 border-x-0 border-b-0 shadow-lg hover:-translate-y-1 transition-transform", metric.border)}>
+          <Card key={i} className={cn("bg-white border-t-4 border-x-slate-100 border-b-slate-100 shadow-md hover:-translate-y-1 transition-transform", metric.border)}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className={cn("p-3 rounded-xl", metric.bg)}>
@@ -72,8 +72,8 @@ export const AdminDashboard = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-3xl font-bold text-white">{metric.value}</h3>
-                <p className="text-sm font-medium text-slate-400 mt-1 uppercase tracking-wide">{metric.label}</p>
+                <h3 className="text-3xl font-bold text-slate-900">{metric.value}</h3>
+                <p className="text-sm font-medium text-slate-500 mt-1 uppercase tracking-wide">{metric.label}</p>
                 <p className={cn("text-xs mt-2 font-medium", metric.color)}>{metric.subtext}</p>
               </div>
             </CardContent>
@@ -83,15 +83,15 @@ export const AdminDashboard = () => {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Activity Feed */}
-        <Card className="bg-brand-darkCharcoal border-t-4 border-brand-sky border-x-0 border-b-0">
+        <Card className="bg-white border-t-4 border-brand-sky shadow-md">
           <CardHeader>
-            <CardTitle className="text-white">System Activity</CardTitle>
-            <CardDescription className="text-slate-400">Recent system events and alerts</CardDescription>
+            <CardTitle className="text-slate-900">System Activity</CardTitle>
+            <CardDescription className="text-slate-500">Recent system events and alerts</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6 relative pl-2">
               {/* Timeline Line */}
-              <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-slate-700"></div>
+              <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-slate-200"></div>
               
               {[
                 { time: "2 mins ago", msg: "New user registration: alex.dev", type: "user" },
@@ -101,12 +101,12 @@ export const AdminDashboard = () => {
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-4 relative z-10">
                   <div className={cn(
-                    "w-3 h-3 rounded-full mt-1.5 border-2 border-brand-darkCharcoal shadow-sm",
+                    "w-3 h-3 rounded-full mt-1.5 border-2 border-white shadow-sm",
                     item.type === "alert" ? "bg-red-500" : item.type === "system" ? "bg-green-500" : "bg-brand-sky"
                   )}></div>
                   <div>
-                    <p className="text-sm text-slate-300">{item.msg}</p>
-                    <span className="text-xs text-slate-500">{item.time}</span>
+                    <p className="text-sm text-slate-700">{item.msg}</p>
+                    <span className="text-xs text-slate-400">{item.time}</span>
                   </div>
                 </div>
               ))}
@@ -115,11 +115,11 @@ export const AdminDashboard = () => {
         </Card>
 
         {/* Recent Reports */}
-        <Card className="bg-brand-darkCharcoal border-t-4 border-orange-500 border-x-0 border-b-0">
+        <Card className="bg-white border-t-4 border-orange-500 shadow-md">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-white">Moderation Queue</CardTitle>
-              <CardDescription className="text-slate-400">Items requiring attention</CardDescription>
+              <CardTitle className="text-slate-900">Moderation Queue</CardTitle>
+              <CardDescription className="text-slate-500">Items requiring attention</CardDescription>
             </div>
             <div className="bg-orange-500/20 text-orange-500 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
                {pendingReports} Pending
@@ -128,7 +128,7 @@ export const AdminDashboard = () => {
           <CardContent>
             <div className="space-y-3">
               {reports.slice(0, 4).map(report => (
-                <div key={report.id} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700 hover:bg-slate-800 transition-colors cursor-pointer group">
+                <div key={report.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer group">
                   <div className="flex items-center gap-3">
                     <div className={cn(
                       "p-2 rounded-full",
@@ -137,19 +137,19 @@ export const AdminDashboard = () => {
                        <AlertTriangle className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white group-hover:text-brand-purple transition-colors capitalize">{report.type} Report</p>
-                      <p className="text-xs text-slate-400">{report.reason}</p>
+                      <p className="text-sm font-medium text-slate-900 group-hover:text-brand-purple transition-colors capitalize">{report.type} Report</p>
+                      <p className="text-xs text-slate-500">{report.reason}</p>
                     </div>
                   </div>
                   <span className={cn(
                     "text-[10px] px-2 py-1 rounded-md uppercase font-bold tracking-wider",
-                    report.status === 'pending' ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-green-500/10 text-green-400 border border-green-500/20"
+                    report.status === 'pending' ? "bg-red-500/10 text-red-500 border border-red-500/20" : "bg-green-500/10 text-green-500 border border-green-500/20"
                   )}>
                     {report.status}
                   </span>
                 </div>
               ))}
-              {reports.length === 0 && <p className="text-slate-500 text-sm italic">No active reports.</p>}
+              {reports.length === 0 && <p className="text-slate-400 text-sm italic">No active reports.</p>}
             </div>
           </CardContent>
         </Card>

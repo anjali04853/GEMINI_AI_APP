@@ -38,7 +38,7 @@ export const ProgressReportPage = () => {
       
       {/* Navigation */}
       <div className="mb-6 flex items-center gap-4">
-         <Link to="/analytics">
+         <Link to="/dashboard/analytics">
             <Button variant="ghost" size="sm" className="hover:bg-slate-100">
                 <ArrowLeft className="h-4 w-4 mr-2" /> Back
             </Button>

@@ -27,7 +27,7 @@ export const VoiceSetupPage = () => {
 
   const handleStart = () => {
     startInterview({ questionCount: 3 });
-    navigate('/interview/voice/active');
+    navigate('/dashboard/interview/voice/active');
   };
 
   return (
@@ -35,7 +35,7 @@ export const VoiceSetupPage = () => {
       <div className="max-w-2xl w-full space-y-6">
         
         <div className="flex items-center justify-between mb-2">
-           <Button variant="ghost" size="sm" onClick={() => navigate('/interview')} className="text-slate-600 hover:text-slate-900 hover:bg-white/50">
+           <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/interview')} className="text-slate-600 hover:text-slate-900 hover:bg-white/50">
              <ArrowLeft className="h-4 w-4 mr-2" />
              Exit Setup
            </Button>

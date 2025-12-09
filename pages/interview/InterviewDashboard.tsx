@@ -63,7 +63,7 @@ export const InterviewDashboard = () => {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         
         {/* Quiz Mode - Royal Purple Theme */}
-        <Link to="/interview/setup" className="group block">
+        <Link to="/dashboard/interview/setup" className="group block">
           <Card className="h-full border-2 border-slate-100 hover:border-brand-purple transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
             <CardHeader>
               <div className="w-12 h-12 rounded-full bg-brand-lavender flex items-center justify-center mb-4 group-hover:bg-brand-purple transition-colors">
@@ -79,7 +79,7 @@ export const InterviewDashboard = () => {
         </Link>
 
         {/* Text Mode - Coral Pink Theme */}
-        <Link to="/interview/text/setup" className="group block">
+        <Link to="/dashboard/interview/text/setup" className="group block">
           <Card className="h-full border-2 border-slate-100 hover:border-brand-pink transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
             <CardHeader>
               <div className="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center mb-4 group-hover:bg-brand-pink transition-colors">
@@ -95,7 +95,7 @@ export const InterviewDashboard = () => {
         </Link>
 
         {/* Voice Mode - Turquoise Theme */}
-        <Link to="/interview/voice/setup" className="group block">
+        <Link to="/dashboard/interview/voice/setup" className="group block">
           <Card className="h-full border-2 border-slate-100 hover:border-brand-turquoise transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
             <CardHeader>
               <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center mb-4 group-hover:bg-brand-turquoise transition-colors">
@@ -111,7 +111,7 @@ export const InterviewDashboard = () => {
         </Link>
 
         {/* Bot Mode - Sky Blue Theme */}
-        <Link to="/interview/bot/setup" className="group block">
+        <Link to="/dashboard/interview/bot/setup" className="group block">
           <Card className="h-full border-2 border-slate-100 hover:border-brand-sky transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
             <CardHeader>
               <div className="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center mb-4 group-hover:bg-brand-sky transition-colors">
@@ -158,7 +158,7 @@ export const InterviewDashboard = () => {
                     )}>
                       {session.score}% Score
                     </span>
-                    <Link to={`/interview/results?session=${session.id}`}>
+                    <Link to={`/dashboard/interview/results?session=${session.id}`}>
                         <Button variant="ghost" size="sm" className="text-slate-400 hover:text-brand-purple">
                             <ArrowRight className="h-4 w-4" />
                         </Button>

@@ -59,14 +59,14 @@ export const BotSetupPage = () => {
       difficulty: 'Medium'
     });
     
-    navigate('/interview/bot/active');
+    navigate('/dashboard/interview/bot/active');
   };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-brand-purple to-indigo-900 p-4 md:p-8 flex items-center justify-center">
       <div className="max-w-3xl w-full">
         <div className="flex items-center mb-6 text-white/80">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/interview')} className="hover:bg-white/10 hover:text-white mr-4">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/interview')} className="hover:bg-white/10 hover:text-white mr-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>

@@ -1,32 +1,79 @@
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Clock, AlertCircle, CheckCircle2, Flag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, AlertCircle, CheckCircle2, Flag, Save, LogOut } from 'lucide-react';
 import { useAssessmentStore } from '../../store/assessmentStore';
 import { QuestionRenderer } from '../../components/assessment/QuestionRenderer';
 import { ProgressBar } from '../../components/assessment/ProgressBar';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardFooter, CardHeader } from '../../components/ui/Card';
+import { Modal } from '../../components/ui/Modal';
 import { cn } from '../../lib/utils';
 
 export const AssessmentPlayerPage = () => {
   const navigate = useNavigate();
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
   const { 
     activeAssessment, 
     currentQuestionIndex, 
     responses, 
     flaggedQuestions,
     isFinished,
+    timeRemaining,
     nextQuestion, 
     prevQuestion, 
     submitAnswer,
     finishAssessment,
     toggleFlag,
-    isFlagged
+    isFlagged,
+    updateTimer
   } = useAssessmentStore();
+  
+  // Timer effect
+  useEffect(() => {
+    if (!activeAssessment || isFinished || timeRemaining <= 0) return;
+    
+    const interval = setInterval(() => {
+      updateTimer(timeRemaining - 1);
+      if (timeRemaining <= 1) {
+        finishAssessment();
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [activeAssessment, isFinished, timeRemaining, updateTimer, finishAssessment]);
+  
+  // Auto-save every 30 seconds
+  useEffect(() => {
+    if (!activeAssessment || isFinished) return;
+    
+    const autoSaveInterval = setInterval(() => {
+      setLastSaved(new Date());
+    }, 30000);
+    
+    return () => clearInterval(autoSaveInterval);
+  }, [activeAssessment, isFinished]);
+  
+  // Format time
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  const handleExit = () => {
+    setShowExitModal(true);
+  };
+  
+  const confirmExit = () => {
+    setShowExitModal(false);
+    navigate('/dashboard/assessments');
+  };
 
   if (!activeAssessment) {
-    return <Navigate to="/assessments" replace />;
+    return <Navigate to="/dashboard/assessments" replace />;
   }
 
   if (isFinished) {
@@ -45,7 +92,7 @@ export const AssessmentPlayerPage = () => {
       // Check if finished successfully (validation passed)
       const state = useAssessmentStore.getState();
       if (state.isFinished) {
-        navigate(`/assessments/${activeAssessment.id}/results`);
+        navigate(`/dashboard/assessments/${activeAssessment.id}/results`);
       }
     } else {
       nextQuestion();
@@ -56,13 +103,29 @@ export const AssessmentPlayerPage = () => {
   const isAnswered = currentAnswer !== undefined && currentAnswer !== '' && currentAnswer !== null && (!Array.isArray(currentAnswer) || currentAnswer.length > 0);
 
   return (
+    <>
+    <Modal isOpen={showExitModal} onClose={() => setShowExitModal(false)} title="Exit Assessment?">
+      <div className="p-6">
+        <p className="text-slate-600 mb-6">Your progress has been saved. You can resume this assessment later.</p>
+        <div className="flex gap-3">
+          <Button variant="secondary" onClick={() => setShowExitModal(false)} className="flex-1">
+            Continue Assessment
+          </Button>
+          <Button variant="destructive" onClick={confirmExit} className="flex-1">
+            <LogOut className="h-4 w-4 mr-2" />
+            Exit
+          </Button>
+        </div>
+      </div>
+    </Modal>
+    
     <div className="max-w-4xl mx-auto space-y-8 pb-10">
       {/* Header with Progress */}
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/assessments')} 
+            onClick={handleExit} 
             className="pl-0 hover:bg-transparent hover:text-brand-purple"
           >
             <ChevronLeft className="h-5 w-5 mr-1" />
@@ -70,9 +133,14 @@ export const AssessmentPlayerPage = () => {
           </Button>
           
           <div className="flex items-center space-x-2">
-            <div className="flex items-center text-sm font-bold text-brand-purple bg-brand-lavender px-4 py-1.5 rounded-full shadow-sm border border-brand-purple/10">
+            <div className={cn(
+              "flex items-center text-sm font-bold px-4 py-1.5 rounded-full shadow-sm border",
+              timeRemaining < 60 
+                ? "text-red-600 bg-red-50 border-red-200 animate-pulse" 
+                : "text-brand-purple bg-brand-lavender border-brand-purple/10"
+            )}>
                 <Clock className="h-4 w-4 mr-2" />
-                14:22
+                {formatTime(timeRemaining)}
             </div>
           </div>
         </div>
@@ -157,8 +225,12 @@ export const AssessmentPlayerPage = () => {
 
       <div className="flex items-center justify-center space-x-4 text-xs font-medium text-slate-400">
         <div className="flex items-center space-x-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-            <span>Progress auto-saved</span>
+            <Save className="w-3 h-3" />
+            <span>
+              {lastSaved 
+                ? `Auto-saved at ${lastSaved.toLocaleTimeString()}` 
+                : 'Progress auto-saved'}
+            </span>
         </div>
         {flaggedQuestions.length > 0 && (
             <div className="flex items-center space-x-2 text-brand-yellow">
@@ -168,5 +240,6 @@ export const AssessmentPlayerPage = () => {
         )}
       </div>
     </div>
+    </>
   );
 };

@@ -57,7 +57,7 @@ export const HistoryPage = () => {
     <div className="space-y-8 max-w-5xl mx-auto pb-10">
       
       <div className="flex items-center gap-4">
-        <Link to="/analytics">
+        <Link to="/dashboard/analytics">
           <Button variant="ghost" size="sm" className="hover:bg-slate-100">
             <ChevronLeft className="h-4 w-4 mr-1" />
             Back to Dashboard
@@ -161,11 +161,11 @@ export const HistoryPage = () => {
                              <Tooltip content="View Results">
                                 <Link 
                                     to={
-                                        item.type === 'Technical Quiz' ? `/interview/results?session=${item.id}` :
-                                        item.type === 'Assessment' ? `/assessments/${item.assessmentId}/results` : 
-                                        item.type === 'Text Interview' ? `/interview/text/results?session=${item.id}` :
-                                        item.type === 'Voice Interview' ? `/interview/voice/results?session=${item.id}` :
-                                        `/interview/bot/results?session=${item.id}`
+                                        item.type === 'Technical Quiz' ? `/dashboard/interview/results?session=${item.id}` :
+                                        item.type === 'Assessment' ? `/dashboard/assessments/${item.assessmentId}/results` : 
+                                        item.type === 'Text Interview' ? `/dashboard/interview/text/results?session=${item.id}` :
+                                        item.type === 'Voice Interview' ? `/dashboard/interview/voice/results?session=${item.id}` :
+                                        `/dashboard/interview/bot/results?session=${item.id}`
                                     }
                                 >
                                     <Button variant="ghost" size="sm" className="text-brand-purple hover:bg-brand-lavender">

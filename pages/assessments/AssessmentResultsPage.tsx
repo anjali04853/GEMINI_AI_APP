@@ -22,7 +22,7 @@ export const AssessmentResultsPage = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  if (!assessment) return <Navigate to="/assessments" replace />;
+  if (!assessment) return <Navigate to="/dashboard/assessments" replace />;
   const hasResponses = Object.keys(responses).length > 0;
   
   const score = hasResponses ? 85 : 0; 
@@ -184,7 +184,7 @@ export const AssessmentResultsPage = () => {
          </Button>
          
          <div className="flex gap-4 w-full md:w-auto">
-            <Link to="/assessments" className="flex-1">
+            <Link to="/dashboard/assessments" className="flex-1">
                <Button variant="outline" className="w-full">
                   Back to List
                </Button>

@@ -20,8 +20,8 @@ export const QuestionManagement = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-           <h1 className="text-3xl font-bold text-white">Questions</h1>
-           <p className="text-slate-400 text-sm mt-1">Manage interview question bank and datasets.</p>
+           <h1 className="text-3xl font-bold text-slate-900">Questions</h1>
+           <p className="text-slate-500 text-sm mt-1">Manage interview question bank and datasets.</p>
         </div>
         <Button className="bg-brand-purple hover:bg-brand-darkPurple text-white shadow-lg shadow-brand-purple/20">
           <Plus className="mr-2 h-4 w-4" />
@@ -30,26 +30,26 @@ export const QuestionManagement = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex items-center gap-4 bg-brand-darkCharcoal p-4 rounded-xl border border-slate-700">
+      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input 
             placeholder="Search questions..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-brand-charcoal border-slate-600 text-white placeholder:text-slate-500 focus:bg-slate-800 focus:border-brand-purple"
+            className="pl-10 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-brand-purple"
           />
         </div>
-        <Button variant="outline" className="border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700 hover:border-slate-500">
+        <Button variant="outline" className="border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300">
            <Filter className="mr-2 h-4 w-4" />
            Filters
         </Button>
       </div>
 
-      <Card className="bg-brand-darkCharcoal border-slate-700 overflow-hidden shadow-xl">
+      <Card className="bg-white border-slate-200 overflow-hidden shadow-md">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="text-xs text-slate-400 uppercase bg-slate-900/50 border-b border-slate-700">
+            <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="px-6 py-4 font-semibold tracking-wider">Question</th>
                 <th className="px-6 py-4 font-semibold tracking-wider">Topic</th>
@@ -57,19 +57,19 @@ export const QuestionManagement = () => {
                 <th className="px-6 py-4 font-semibold tracking-wider text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700">
+            <tbody className="divide-y divide-slate-100">
               {filtered.map((q) => (
-                <tr key={q.id} className="group hover:bg-slate-800/50 transition-colors">
+                <tr key={q.id} className="group hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4">
-                    <p className="font-medium text-slate-200 line-clamp-2 leading-relaxed group-hover:text-white transition-colors">{q.text}</p>
+                    <p className="font-medium text-slate-700 line-clamp-2 leading-relaxed group-hover:text-slate-900 transition-colors">{q.text}</p>
                     <div className="flex gap-2 mt-2">
                        {q.options.slice(0,2).map((opt, i) => (
-                          <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700">
+                          <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-500 border border-slate-200">
                              {i === q.correctOptionIndex && <CheckCircle2 className="w-3 h-3 mr-1 text-green-500" />}
                              {opt.substring(0, 20)}...
                           </span>
                        ))}
-                       {q.options.length > 2 && <span className="text-[10px] text-slate-500 py-0.5">+{q.options.length - 2} more</span>}
+                       {q.options.length > 2 && <span className="text-[10px] text-slate-400 py-0.5">+{q.options.length - 2} more</span>}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -81,9 +81,9 @@ export const QuestionManagement = () => {
                     <Badge 
                        className={cn(
                           "border",
-                          q.difficulty === 'Easy' ? "bg-green-500/10 text-green-400 border-green-500/20" : 
-                          q.difficulty === 'Medium' ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" : 
-                          "bg-red-500/10 text-red-400 border-red-500/20"
+                          q.difficulty === 'Easy' ? "bg-green-500/10 text-green-600 border-green-500/20" : 
+                          q.difficulty === 'Medium' ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" : 
+                          "bg-red-500/10 text-red-600 border-red-500/20"
                        )}
                     >
                       {q.difficulty}
@@ -91,10 +91,10 @@ export const QuestionManagement = () => {
                   </td>
                   <td className="px-6 py-4 text-right whitespace-nowrap">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-brand-sky hover:bg-slate-700">
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-brand-sky hover:bg-slate-100">
                             <Edit className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={() => deleteQuestion(q.id)} className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-slate-700">
+                        <Button size="icon" variant="ghost" onClick={() => deleteQuestion(q.id)} className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-slate-100">
                             <Trash2 className="h-4 w-4" />
                         </Button>
                     </div>
@@ -106,11 +106,11 @@ export const QuestionManagement = () => {
         </div>
         {filtered.length === 0 && (
             <div className="p-12 text-center">
-               <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Search className="h-8 w-8 text-slate-500" />
+               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="h-8 w-8 text-slate-400" />
                </div>
-               <h3 className="text-slate-200 font-medium">No questions found</h3>
-               <p className="text-slate-500 text-sm mt-1">Try adjusting your search terms.</p>
+               <h3 className="text-slate-700 font-medium">No questions found</h3>
+               <p className="text-slate-400 text-sm mt-1">Try adjusting your search terms.</p>
             </div>
         )}
       </Card>

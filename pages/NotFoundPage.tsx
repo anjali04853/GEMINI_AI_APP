@@ -14,7 +14,7 @@ export const NotFoundPage = () => {
       <p className="text-slate-500 max-w-md mb-8">
         The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.
       </p>
-      <Link to="/">
+      <Link to="/dashboard">
         <Button>
           <Home className="mr-2 h-4 w-4" />
           Back to Dashboard

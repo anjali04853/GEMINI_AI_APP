@@ -38,7 +38,7 @@ export const QuizSetupPage = () => {
       timeLimit
     });
     
-    navigate('/interview/quiz');
+    navigate('/dashboard/interview/quiz');
   };
 
   const getDifficultyColor = (diff: string) => {
@@ -53,7 +53,7 @@ export const QuizSetupPage = () => {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center mb-6">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/interview')} className="mr-4 text-slate-500 hover:text-brand-purple">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/interview')} className="mr-4 text-slate-500 hover:text-brand-purple">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>

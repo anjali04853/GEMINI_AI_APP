@@ -6,11 +6,13 @@ import { AudioRecorder } from '../../../components/voice/AudioRecorder';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import { useToast } from '../../../components/ui/Toast';
 import { cn } from '../../../lib/utils';
 import { Tooltip } from '../../../components/ui/Tooltip';
 
 export const VoicePlayerPage = () => {
   const navigate = useNavigate();
+  const { addToast } = useToast();
   const { 
     activeQuestions, 
     currentQuestionIndex, 
@@ -23,7 +25,7 @@ export const VoicePlayerPage = () => {
   } = useVoiceInterviewStore();
 
   if (!isInterviewActive || activeQuestions.length === 0) {
-    return <Navigate to="/interview" replace />;
+    return <Navigate to="/dashboard/interview" replace />;
   }
 
   const currentQ = activeQuestions[currentQuestionIndex];
@@ -45,7 +47,8 @@ export const VoicePlayerPage = () => {
 
   const handleSubmit = () => {
     const sessionId = submitInterview();
-    navigate(`/interview/voice/results?session=${sessionId}`);
+    addToast('Recording submitted successfully! 🎉', 'success');
+    navigate(`/dashboard/interview/voice/results?session=${sessionId}`);
   };
 
   return (
@@ -179,7 +182,7 @@ export const VoicePlayerPage = () => {
                </div>
 
                <div className="pt-4 flex justify-center">
-                  <Button variant="ghost" size="sm" className="text-slate-400 hover:text-red-500" onClick={() => navigate('/interview')}>
+                  <Button variant="ghost" size="sm" className="text-slate-400 hover:text-red-500" onClick={() => navigate('/dashboard/interview')}>
                      <AlertCircle className="h-3 w-3 mr-1" />
                      Cancel Session
                   </Button>

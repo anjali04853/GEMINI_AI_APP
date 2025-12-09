@@ -18,7 +18,7 @@ export const TextResultsPage = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (!sessionId || !session) {
-    return <Navigate to="/interview" replace />;
+    return <Navigate to="/dashboard/interview" replace />;
   }
 
   // Mock score logic (in real app, this would come from AI analysis of all answers)
@@ -226,13 +226,13 @@ export const TextResultsPage = () => {
 
       {/* Footer Actions */}
       <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6 border-t border-slate-200">
-        <Link to="/interview">
+        <Link to="/dashboard/interview">
           <Button variant="outline" className="w-full sm:w-auto h-12 px-8 border-slate-300">
             <LayoutDashboard className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Button>
         </Link>
-        <Link to="/interview/text/setup">
+        <Link to="/dashboard/interview/text/setup">
           <Button className="w-full sm:w-auto h-12 px-8 bg-brand-pink hover:bg-pink-600 shadow-lg shadow-brand-pink/20">
             <RefreshCw className="mr-2 h-4 w-4" />
             Start New Session
