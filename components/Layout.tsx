@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -11,7 +12,8 @@ import {
   Bot,
   ClipboardCheck,
   BrainCircuit,
-  BarChart2
+  BarChart2,
+  ShieldAlert
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Button } from './ui/Button';
@@ -85,6 +87,18 @@ export const Layout = () => {
           <NavItem to="/interview" icon={BrainCircuit} onClick={closeSidebar}>Interview Prep</NavItem>
           <NavItem to="/analytics" icon={BarChart2} onClick={closeSidebar}>Analytics</NavItem>
           <NavItem to="/chat" icon={Bot} onClick={closeSidebar}>AI Chat</NavItem>
+          
+          {user?.role === 'admin' && (
+            <>
+              <div className="pt-4 pb-2 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Admin</div>
+              <NavItem to="/admin" icon={ShieldAlert} onClick={closeSidebar}>Admin Panel</NavItem>
+              <NavItem to="/admin/users" icon={UserIcon} onClick={closeSidebar}>Users</NavItem>
+              <NavItem to="/admin/questions" icon={ClipboardCheck} onClick={closeSidebar}>Questions</NavItem>
+              <NavItem to="/admin/settings" icon={Settings} onClick={closeSidebar}>System</NavItem>
+            </>
+          )}
+
+          <div className="pt-4 pb-2 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">User</div>
           <NavItem to="/profile" icon={UserIcon} onClick={closeSidebar}>Profile</NavItem>
           <NavItem to="/settings" icon={Settings} onClick={closeSidebar}>Settings</NavItem>
         </div>

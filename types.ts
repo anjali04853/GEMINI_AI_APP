@@ -4,6 +4,9 @@ export interface User {
   name: string;
   email: string;
   avatar?: string;
+  role: 'user' | 'admin';
+  status: 'active' | 'blocked';
+  joinedAt?: number;
 }
 
 export interface AuthState {
@@ -31,6 +34,7 @@ export interface Question {
   options?: string[]; // For multiple choice
   correctAnswer?: string | number; // For scoring (optional)
   required?: boolean;
+  category?: string; // Added for admin filtering
 }
 
 export interface Assessment {
@@ -150,4 +154,32 @@ export interface VoiceBotSession {
   config: VoiceBotConfig;
   transcript: BotTranscriptItem[];
   durationSeconds: number;
+}
+
+// --- Admin Types ---
+
+export interface Dataset {
+  id: string;
+  name: string;
+  description: string;
+  questionCount: number;
+  isActive: boolean;
+  lastUpdated: number;
+}
+
+export interface SystemConfig {
+  maintenanceMode: boolean;
+  allowRegistrations: boolean;
+  aiModelVersion: string;
+  defaultTimeLimit: number;
+  maxDailySessions: number;
+}
+
+export interface ReportItem {
+  id: string;
+  type: 'response' | 'question' | 'user';
+  contentId: string;
+  reason: string;
+  status: 'pending' | 'resolved' | 'dismissed';
+  timestamp: number;
 }

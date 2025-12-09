@@ -27,11 +27,21 @@ import { BotResultsPage } from './pages/interview/bot/BotResultsPage';
 import { AnalyticsDashboard } from './pages/analytics/AnalyticsDashboard';
 import { HistoryPage } from './pages/analytics/HistoryPage';
 
+// Admin Pages
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { QuestionManagement } from './pages/admin/QuestionManagement';
+import { UserManagement } from './pages/admin/UserManagement';
+import { DatasetManagement } from './pages/admin/DatasetManagement';
+import { SystemSettings } from './pages/admin/SystemSettings';
+
 // Protected Route Component
-const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
+const ProtectedRoute = ({ children, requireAdmin = false }: { children?: React.ReactNode, requireAdmin?: boolean }) => {
   const { user } = useAuthStore();
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+  if (requireAdmin && user.role !== 'admin') {
+    return <Navigate to="/" replace />;
   }
   return <>{children}</>;
 };
@@ -89,6 +99,13 @@ const App = () => {
           {/* Analytics Routes */}
           <Route path="analytics" element={<AnalyticsDashboard />} />
           <Route path="analytics/history" element={<HistoryPage />} />
+
+          {/* Admin Routes */}
+          <Route path="admin" element={<ProtectedRoute requireAdmin={true}><AdminDashboard /></ProtectedRoute>} />
+          <Route path="admin/questions" element={<ProtectedRoute requireAdmin={true}><QuestionManagement /></ProtectedRoute>} />
+          <Route path="admin/users" element={<ProtectedRoute requireAdmin={true}><UserManagement /></ProtectedRoute>} />
+          <Route path="admin/datasets" element={<ProtectedRoute requireAdmin={true}><DatasetManagement /></ProtectedRoute>} />
+          <Route path="admin/settings" element={<ProtectedRoute requireAdmin={true}><SystemSettings /></ProtectedRoute>} />
 
           {/* Utilities */}
           <Route path="chat" element={<AIChatPage />} />

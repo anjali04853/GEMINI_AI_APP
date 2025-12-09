@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,7 +8,7 @@ import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Bot } from 'lucide-react';
+import { Bot, Shield } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -29,12 +30,20 @@ export const LoginPage = () => {
     setIsLoading(true);
     // Simulate API call
     setTimeout(() => {
+      const isAdmin = data.email === 'admin@example.com';
       login(
-        { id: '1', name: 'Demo User', email: data.email },
+        { 
+          id: isAdmin ? '1' : '2', 
+          name: isAdmin ? 'Admin User' : 'Demo User', 
+          email: data.email,
+          role: isAdmin ? 'admin' : 'user',
+          status: 'active',
+          joinedAt: Date.now()
+        },
         'fake-jwt-token'
       );
       setIsLoading(false);
-      navigate('/');
+      navigate(isAdmin ? '/admin' : '/');
     }, 1000);
   };
 
@@ -78,6 +87,13 @@ export const LoginPage = () => {
                 >
                   Forgot password?
                 </Link>
+              </div>
+            </div>
+            <div className="bg-blue-50 p-3 rounded-md text-xs text-blue-800 flex items-start gap-2">
+              <Shield className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <div>
+                <p><strong>Admin Demo:</strong> Use <code>admin@example.com</code> to access the admin panel.</p>
+                <p><strong>User Demo:</strong> Use any other email.</p>
               </div>
             </div>
             <Button type="submit" className="w-full" isLoading={isLoading}>
