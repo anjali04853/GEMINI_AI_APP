@@ -30,12 +30,14 @@ const BotInterviewPage = React.lazy(() => import('./pages/interview/bot/BotInter
 const BotResultsPage = React.lazy(() => import('./pages/interview/bot/BotResultsPage').then(module => ({ default: module.BotResultsPage })));
 const AnalyticsDashboard = React.lazy(() => import('./pages/analytics/AnalyticsDashboard').then(module => ({ default: module.AnalyticsDashboard })));
 const HistoryPage = React.lazy(() => import('./pages/analytics/HistoryPage').then(module => ({ default: module.HistoryPage })));
+const ProgressReportPage = React.lazy(() => import('./pages/analytics/ProgressReportPage').then(module => ({ default: module.ProgressReportPage })));
 const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const QuestionManagement = React.lazy(() => import('./pages/admin/QuestionManagement').then(module => ({ default: module.QuestionManagement })));
 const UserManagement = React.lazy(() => import('./pages/admin/UserManagement').then(module => ({ default: module.UserManagement })));
 const DatasetManagement = React.lazy(() => import('./pages/admin/DatasetManagement').then(module => ({ default: module.DatasetManagement })));
 const SystemSettings = React.lazy(() => import('./pages/admin/SystemSettings').then(module => ({ default: module.SystemSettings })));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage').then(module => ({ default: module.NotFoundPage })));
+const AccessDeniedPage = React.lazy(() => import('./pages/AccessDeniedPage').then(module => ({ default: module.AccessDeniedPage })));
 
 // Protected Route Component
 const ProtectedRoute = ({ children, requireAdmin = false }: { children?: React.ReactNode, requireAdmin?: boolean }) => {
@@ -44,7 +46,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children?: React.R
     return <Navigate to="/login" replace />;
   }
   if (requireAdmin && user.role !== 'admin') {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/access-denied" replace />;
   }
   return <>{children}</>;
 };
@@ -69,6 +71,7 @@ const App = () => {
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+            <Route path="/access-denied" element={<Suspense fallback={<Loading />}><AccessDeniedPage /></Suspense>} />
 
             {/* Protected Dashboard Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
@@ -105,6 +108,7 @@ const App = () => {
               {/* Analytics Routes */}
               <Route path="analytics" element={<Suspense fallback={<Loading />}><AnalyticsDashboard /></Suspense>} />
               <Route path="analytics/history" element={<Suspense fallback={<Loading />}><HistoryPage /></Suspense>} />
+              <Route path="analytics/report" element={<Suspense fallback={<Loading />}><ProgressReportPage /></Suspense>} />
 
               {/* Admin Routes */}
               <Route path="admin" element={<ProtectedRoute requireAdmin={true}><Suspense fallback={<Loading />}><AdminDashboard /></Suspense></ProtectedRoute>} />

@@ -46,7 +46,7 @@ const NavItem = ({ to, icon: Icon, children, onClick, isCollapsed }: NavItemProp
       <>
         <Icon 
           className={cn(
-            "h-5 w-5 transition-colors", 
+            "h-5 w-5 transition-colors flex-shrink-0", 
             isActive ? "text-white animate-pulse-glow" : "text-slate-500 group-hover:text-brand-purple"
           )} 
           aria-hidden="true" 
@@ -89,7 +89,7 @@ export const Layout = () => {
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm animate-in fade-in"
           onClick={() => setIsSidebarOpen(false)}
           aria-hidden="true"
         />
@@ -97,17 +97,17 @@ export const Layout = () => {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 bg-gradient-to-b from-brand-offWhite to-brand-lavender border-r border-slate-200 transform transition-all duration-300 ease-in-out lg:static lg:flex lg:flex-col shadow-xl lg:shadow-none",
+        "fixed inset-y-0 left-0 z-50 bg-gradient-to-b from-brand-offWhite to-brand-lavender border-r border-slate-200 transform transition-transform duration-300 ease-in-out lg:static lg:flex lg:flex-col shadow-xl lg:shadow-none",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         isSidebarCollapsed ? "w-20" : "w-64"
       )}>
         <div className="h-16 flex items-center px-4 border-b border-slate-100/50 relative">
-          <div className="flex items-center space-x-2 w-full">
+          <div className="flex items-center space-x-2 w-full overflow-hidden">
              <div className="h-8 w-8 bg-gradient-to-br from-brand-purple to-brand-pink rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
                 <Bot className="h-5 w-5 text-white" />
              </div>
              {!isSidebarCollapsed && (
-                <span className="text-xl font-bold text-slate-900 tracking-tight animate-in fade-in duration-300">
+                <span className="text-xl font-bold text-slate-900 tracking-tight animate-in fade-in duration-300 whitespace-nowrap">
                    Gemini<span className="text-brand-purple">App</span>
                 </span>
              )}
@@ -164,8 +164,8 @@ export const Layout = () => {
         <div className="p-4 border-t border-slate-100 bg-white/50 backdrop-blur-sm">
           {!isSidebarCollapsed ? (
               <>
-                <div className="flex items-center space-x-3 mb-4 px-1">
-                    <div className="relative">
+                <div className="flex items-center space-x-3 mb-4 px-1 overflow-hidden">
+                    <div className="relative flex-shrink-0">
                         <div className="h-9 w-9 rounded-full bg-gradient-to-br from-brand-purple to-brand-turquoise flex items-center justify-center text-white font-bold shadow-md p-[2px]">
                              <div className="h-full w-full rounded-full bg-slate-900/10 flex items-center justify-center">
                                  {user?.name.charAt(0)}
@@ -185,11 +185,11 @@ export const Layout = () => {
               </>
           ) : (
               <div className="flex flex-col items-center space-y-4">
-                  <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-brand-purple to-brand-turquoise flex items-center justify-center text-white font-bold shadow-md cursor-pointer hover:scale-105 transition-transform">
+                  <div className="relative h-9 w-9 rounded-full bg-gradient-to-br from-brand-purple to-brand-turquoise flex items-center justify-center text-white font-bold shadow-md cursor-pointer hover:scale-105 transition-transform" title={user?.name}>
                      {user?.name.charAt(0)}
                      <span className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-brand-turquoise border-2 border-white rounded-full"></span>
                   </div>
-                  <button onClick={handleLogout} className="text-slate-400 hover:text-red-600 transition-colors">
+                  <button onClick={handleLogout} className="text-slate-400 hover:text-red-600 transition-colors" title="Logout">
                       <LogOut className="h-5 w-5" />
                   </button>
               </div>
@@ -198,7 +198,7 @@ export const Layout = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-screen w-0 relative">
+      <main className="flex-1 flex flex-col min-h-screen w-0 relative transition-all duration-300">
         <header className="h-16 bg-white shadow-sm border-b border-slate-100 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30 transition-all duration-300">
           <div className="flex items-center">
               <button
