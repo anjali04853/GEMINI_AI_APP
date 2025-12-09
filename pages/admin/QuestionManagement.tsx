@@ -1,11 +1,11 @@
-
 import React, { useState } from 'react';
-import { Edit, Trash2, Plus, Search } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, Filter, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useAdminStore } from '../../store/adminStore';
 import { Badge } from '../../components/ui/Badge';
+import { cn } from '../../lib/utils';
 
 export const QuestionManagement = () => {
   const { questions, deleteQuestion } = useAdminStore();
@@ -18,60 +18,101 @@ export const QuestionManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-slate-900">Question Management</h1>
-        <Button>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+           <h1 className="text-3xl font-bold text-white">Questions</h1>
+           <p className="text-slate-400 text-sm mt-1">Manage interview question bank and datasets.</p>
+        </div>
+        <Button className="bg-brand-purple hover:bg-brand-darkPurple text-white shadow-lg shadow-brand-purple/20">
           <Plus className="mr-2 h-4 w-4" />
           Add Question
         </Button>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+      {/* Filter Bar */}
+      <div className="flex items-center gap-4 bg-brand-darkCharcoal p-4 rounded-xl border border-slate-700">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
           <Input 
             placeholder="Search questions..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-10 bg-brand-charcoal border-slate-600 text-white placeholder:text-slate-500 focus:bg-slate-800 focus:border-brand-purple"
           />
         </div>
+        <Button variant="outline" className="border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700 hover:border-slate-500">
+           <Filter className="mr-2 h-4 w-4" />
+           Filters
+        </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Interview Question Bank</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="border-t border-slate-200">
-            {filtered.map((q) => (
-              <div key={q.id} className="flex items-center justify-between p-4 border-b border-slate-100 hover:bg-slate-50">
-                <div className="flex-1 pr-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="outline">{q.topic}</Badge>
-                    <Badge variant={q.difficulty === 'Easy' ? 'success' : q.difficulty === 'Medium' ? 'warning' : 'destructive'}>
+      <Card className="bg-brand-darkCharcoal border-slate-700 overflow-hidden shadow-xl">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="text-xs text-slate-400 uppercase bg-slate-900/50 border-b border-slate-700">
+              <tr>
+                <th className="px-6 py-4 font-semibold tracking-wider">Question</th>
+                <th className="px-6 py-4 font-semibold tracking-wider">Topic</th>
+                <th className="px-6 py-4 font-semibold tracking-wider">Difficulty</th>
+                <th className="px-6 py-4 font-semibold tracking-wider text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-700">
+              {filtered.map((q) => (
+                <tr key={q.id} className="group hover:bg-slate-800/50 transition-colors">
+                  <td className="px-6 py-4">
+                    <p className="font-medium text-slate-200 line-clamp-2 leading-relaxed group-hover:text-white transition-colors">{q.text}</p>
+                    <div className="flex gap-2 mt-2">
+                       {q.options.slice(0,2).map((opt, i) => (
+                          <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700">
+                             {i === q.correctOptionIndex && <CheckCircle2 className="w-3 h-3 mr-1 text-green-500" />}
+                             {opt.substring(0, 20)}...
+                          </span>
+                       ))}
+                       {q.options.length > 2 && <span className="text-[10px] text-slate-500 py-0.5">+{q.options.length - 2} more</span>}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-purple/10 text-brand-purple border border-brand-purple/20">
+                       {q.topic}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Badge 
+                       className={cn(
+                          "border",
+                          q.difficulty === 'Easy' ? "bg-green-500/10 text-green-400 border-green-500/20" : 
+                          q.difficulty === 'Medium' ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" : 
+                          "bg-red-500/10 text-red-400 border-red-500/20"
+                       )}
+                    >
                       {q.difficulty}
                     </Badge>
-                  </div>
-                  <p className="text-sm font-medium text-slate-900">{q.text}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm">
-                    <Edit className="h-4 w-4 text-slate-500" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => deleteQuestion(q.id)}>
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-            {filtered.length === 0 && (
-              <div className="p-8 text-center text-slate-500">
-                No questions found.
-              </div>
-            )}
-          </div>
-        </CardContent>
+                  </td>
+                  <td className="px-6 py-4 text-right whitespace-nowrap">
+                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-brand-sky hover:bg-slate-700">
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => deleteQuestion(q.id)} className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-slate-700">
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {filtered.length === 0 && (
+            <div className="p-12 text-center">
+               <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="h-8 w-8 text-slate-500" />
+               </div>
+               <h3 className="text-slate-200 font-medium">No questions found</h3>
+               <p className="text-slate-500 text-sm mt-1">Try adjusting your search terms.</p>
+            </div>
+        )}
       </Card>
     </div>
   );
