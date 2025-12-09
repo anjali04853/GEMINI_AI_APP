@@ -10,6 +10,7 @@ const LandingPage = React.lazy(() => import('./pages/LandingPage').then(module =
 const LoginPage = React.lazy(() => import('./pages/auth/LoginPage').then(module => ({ default: module.LoginPage })));
 const RegisterPage = React.lazy(() => import('./pages/auth/RegisterPage').then(module => ({ default: module.RegisterPage })));
 const ForgotPasswordPage = React.lazy(() => import('./pages/auth/ForgotPasswordPage').then(module => ({ default: module.ForgotPasswordPage })));
+const ResetPasswordPage = React.lazy(() => import('./pages/auth/ResetPasswordPage').then(module => ({ default: module.ResetPasswordPage })));
 const Dashboard = React.lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
 const AIChatPage = React.lazy(() => import('./pages/AIChatPage').then(module => ({ default: module.AIChatPage })));
 const AssessmentListPage = React.lazy(() => import('./pages/assessments/AssessmentListPage').then(module => ({ default: module.AssessmentListPage })));
@@ -71,6 +72,7 @@ const App = () => {
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+            <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
             <Route path="/access-denied" element={<Suspense fallback={<Loading />}><AccessDeniedPage /></Suspense>} />
 
             {/* Protected Dashboard Routes */}

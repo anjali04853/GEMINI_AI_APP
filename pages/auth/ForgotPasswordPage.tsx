@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Bot, CheckCircle2, Mail, ArrowLeft } from 'lucide-react';
+import { Bot, CheckCircle2, Mail, ArrowLeft, ArrowRight } from 'lucide-react';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -57,6 +57,18 @@ export const ForgotPasswordPage = () => {
                     We've sent password reset instructions to your email address.
                 </p>
             </div>
+
+            {/* Demo Link Implementation */}
+            <div className="w-full bg-blue-50 border border-blue-100 rounded-lg p-4 text-center">
+                <p className="text-xs font-bold text-blue-600 uppercase mb-2">Demo Mode</p>
+                <p className="text-xs text-blue-800 mb-3">Since this is a demo, we can't send real emails. Use the link below to continue.</p>
+                <Link to="/reset-password">
+                    <Button variant="primary" size="sm" className="w-full bg-blue-600 hover:bg-blue-700 shadow-none">
+                        Simulate Clicking Email Link <ArrowRight className="ml-1 h-3 w-3" />
+                    </Button>
+                </Link>
+            </div>
+
             <Button onClick={() => setIsSubmitted(false)} variant="outline" className="w-full">
                 Try another email
             </Button>
