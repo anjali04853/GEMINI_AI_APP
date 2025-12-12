@@ -41,6 +41,25 @@ function decode(base64: string) {
   return bytes;
 }
 
+// AudioWorklet processor code - sends audio data immediately
+const audioWorkletProcessorCode = `
+class AudioCaptureProcessor extends AudioWorkletProcessor {
+  process(inputs, outputs) {
+    const input = inputs[0];
+    if (input && input.length > 0 && input[0].length > 0) {
+      const inputChannel = input[0];
+      // Send audio data immediately
+      this.port.postMessage({
+        audioData: new Float32Array(inputChannel)
+      });
+    }
+    return true;
+  }
+}
+
+registerProcessor('audio-capture-processor', AudioCaptureProcessor);
+`;
+
 async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
   const dataInt16 = new Int16Array(data.buffer);
   const frameCount = dataInt16.length / numChannels;
@@ -71,13 +90,17 @@ export const BotInterviewPage = () => {
   // Audio Refs
   const audioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
+  const workletNodeRef = useRef<AudioWorkletNode | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const nextStartTimeRef = useRef<number>(0);
-  const sessionRef = useRef<Promise<any> | null>(null);
+  const sessionRef = useRef<any | null>(null);
+  const sessionPromiseRef = useRef<Promise<any> | null>(null);
   const outputNodeRef = useRef<GainNode | null>(null);
   const sourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
+  const isConnectedRef = useRef<boolean>(false);
+  const isMicOnRef = useRef<boolean>(true);
 
   // Transcript Buffer Refs
   const currentInputTransRef = useRef('');
@@ -122,31 +145,145 @@ export const BotInterviewPage = () => {
       const source = inputCtx.createMediaStreamSource(stream);
       sourceRef.current = source;
       
-      const processor = inputCtx.createScriptProcessor(4096, 1, 1);
-      processorRef.current = processor;
-      
-      processor.onaudioprocess = (e) => {
-        if (!isMicOn) return;
-        const inputData = e.inputBuffer.getChannelData(0);
-        
-        // Volume for visualizer
-        let sum = 0;
-        for(let i=0; i<inputData.length; i++) sum += inputData[i] * inputData[i];
-        const rms = Math.sqrt(sum / inputData.length);
-        setVolumeLevel(Math.min(100, rms * 500)); // Amplify for visual
-
-        if (rms > 0.01) setBotStatus('listening');
-
-        const pcmBlob = createBlob(inputData);
-        if (sessionRef.current) {
-          sessionRef.current.then((session: any) => {
-             try { session.sendRealtimeInput({ media: pcmBlob }); } catch (err) { console.error(err); }
+      // Try AudioWorklet first, fallback to ScriptProcessorNode if not supported
+      let useWorklet = false;
+      if (inputCtx.audioWorklet) {
+        try {
+          // Load AudioWorklet processor
+          const blob = new Blob([audioWorkletProcessorCode], { type: 'application/javascript' });
+          const workletUrl = URL.createObjectURL(blob);
+          
+          await inputCtx.audioWorklet.addModule(workletUrl);
+          URL.revokeObjectURL(workletUrl);
+          
+          // Create AudioWorkletNode
+          const workletNode = new AudioWorkletNode(inputCtx, 'audio-capture-processor', {
+            numberOfInputs: 1,
+            numberOfOutputs: 1,
+            channelCount: 1
           });
-        }
-      };
+          
+          // Handle audio data from worklet
+          workletNode.port.onmessage = (e) => {
+            // Use refs to avoid closure issues
+            if (!isMicOnRef.current || !isConnectedRef.current) return;
+            
+            const session = sessionRef.current;
+            if (!session || typeof session.sendRealtimeInput !== 'function') {
+              // Session not ready yet, skip this chunk
+              return;
+            }
+            
+            const inputData = e.data?.audioData;
+            if (!inputData || !(inputData instanceof Float32Array)) return;
+            
+            // Volume for visualizer
+            let sum = 0;
+            for(let i=0; i<inputData.length; i++) sum += inputData[i] * inputData[i];
+            const rms = Math.sqrt(sum / inputData.length);
+            setVolumeLevel(Math.min(100, rms * 500)); // Amplify for visual
 
-      source.connect(processor);
-      processor.connect(inputCtx.destination);
+            if (rms > 0.01) setBotStatus('listening');
+
+            // Convert to PCM blob format expected by Gemini API
+            const pcmBlob = createBlob(inputData);
+            
+            // Send to Gemini API - check WebSocket state before sending
+            try {
+              // Check WebSocket state
+              const ws = (session as any)?.conn?.ws;
+              if (ws && (ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED)) {
+                isConnectedRef.current = false;
+                setIsConnected(false);
+                sessionRef.current = null;
+                return;
+              }
+              
+              // Use media format (SDK expects media, not audio)
+              session.sendRealtimeInput({ media: pcmBlob });
+            } catch (err: any) {
+              // Silently ignore errors if WebSocket is closed
+              const errMsg = err?.message || String(err || '');
+              if (errMsg && !errMsg.includes('CLOSING') && !errMsg.includes('CLOSED') && !errMsg.includes('already in')) {
+                console.error('Error sending audio:', err);
+              }
+              // If WebSocket is closed, update connection state
+              if (errMsg && (errMsg.includes('CLOSING') || errMsg.includes('CLOSED') || errMsg.includes('already in'))) {
+                isConnectedRef.current = false;
+                setIsConnected(false);
+                sessionRef.current = null;
+              }
+            }
+          };
+          
+          workletNodeRef.current = workletNode;
+          useWorklet = true;
+        } catch (err) {
+          console.warn('AudioWorklet not available, falling back to ScriptProcessorNode:', err);
+        }
+      }
+      
+      // Fallback to ScriptProcessorNode if AudioWorklet failed
+      if (!useWorklet) {
+        const processor = inputCtx.createScriptProcessor(4096, 1, 1);
+        processorRef.current = processor;
+        
+        processor.onaudioprocess = (e: AudioProcessingEvent) => {
+          if (!isMicOnRef.current || !isConnectedRef.current) return;
+          
+          const session = sessionRef.current;
+          if (!session || typeof session.sendRealtimeInput !== 'function') {
+            // Session not ready yet, skip this chunk
+            return;
+          }
+          
+          const inputData = e.inputBuffer.getChannelData(0);
+          
+          // Volume for visualizer
+          let sum = 0;
+          for(let i=0; i<inputData.length; i++) sum += inputData[i] * inputData[i];
+          const rms = Math.sqrt(sum / inputData.length);
+          setVolumeLevel(Math.min(100, rms * 500));
+
+          if (rms > 0.01) setBotStatus('listening');
+
+          const pcmBlob = createBlob(inputData);
+          
+          try {
+            // Check WebSocket state
+            const ws = (session as any)?.conn?.ws;
+            if (ws && (ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED)) {
+              isConnectedRef.current = false;
+              setIsConnected(false);
+              sessionRef.current = null;
+              return;
+            }
+            
+            // Use media format (SDK expects media, not audio)
+            session.sendRealtimeInput({ media: pcmBlob });
+          } catch (err: any) {
+            const errMsg = err?.message || String(err || '');
+            if (errMsg && !errMsg.includes('CLOSING') && !errMsg.includes('CLOSED') && !errMsg.includes('already in')) {
+              console.error('Error sending audio:', err);
+            }
+            if (errMsg && (errMsg.includes('CLOSING') || errMsg.includes('CLOSED') || errMsg.includes('already in'))) {
+              isConnectedRef.current = false;
+              setIsConnected(false);
+              sessionRef.current = null;
+            }
+          }
+        };
+        
+        source.connect(processor);
+        processor.connect(inputCtx.destination);
+      }
+
+      if (useWorklet && workletNodeRef.current) {
+        source.connect(workletNodeRef.current);
+        workletNodeRef.current.connect(inputCtx.destination);
+      }
+      // Note: ScriptProcessorNode is already connected above if useWorklet is false
+      
       return true;
     } catch (e) {
       console.error("Audio init error", e);
@@ -167,21 +304,69 @@ export const BotInterviewPage = () => {
       model: 'gemini-2.5-flash-native-audio-preview-09-2025',
       config: {
         responseModalities: [Modality.AUDIO],
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
+        speechConfig: { 
+          voiceConfig: { 
+            prebuiltVoiceConfig: { 
+              voiceName: 'Zephyr' 
+            } 
+          } 
+        },
         systemInstruction: activeConfig.context || `You are a helpful interviewer conducting a ${activeConfig.topic} interview.`,
-        inputAudioTranscription: { model: "gemini-2.5-flash" },
-        outputAudioTranscription: { model: "gemini-2.5-flash" },
+        inputAudioTranscription: { 
+          model: "gemini-2.5-flash" 
+        },
+        outputAudioTranscription: { 
+          model: "gemini-2.5-flash" 
+        },
       }
     };
+    
+    console.log('Connecting with config:', JSON.stringify(config, null, 2));
 
     try {
       const sessionPromise = ai.live.connect({
-        ...config,
+        model: config.model,
+        config: config.config,
         callbacks: {
           onopen: () => {
-            setIsConnected(true);
-            setTranscript([{ id: 'init', role: 'model', text: "Hello! I'm your AI interviewer. Shall we begin?", timestamp: Date.now() }]);
-            setBotStatus('speaking');
+            console.log('WebSocket opened');
+            // Wait a bit for WebSocket to be fully ready before allowing audio sending
+            setTimeout(() => {
+              isConnectedRef.current = true;
+              setIsConnected(true);
+              setTranscript([{ id: 'init', role: 'model', text: "Hello! I'm your AI interviewer. Shall we begin?", timestamp: Date.now() }]);
+              setBotStatus('speaking');
+            }, 100);
+          },
+          onerror: (err: any) => {
+            console.error('WebSocket error:', err);
+            isConnectedRef.current = false;
+            setIsConnected(false);
+            sessionRef.current = null;
+            addToast('Connection error. Please try again.', 'error');
+            // Clean up audio processing nodes on error
+            if (workletNodeRef.current) {
+              try {
+                workletNodeRef.current.port.onmessage = null;
+                if (sourceRef.current) {
+                  sourceRef.current.disconnect();
+                }
+                workletNodeRef.current.disconnect();
+              } catch (e) {
+                // Ignore cleanup errors
+              }
+            }
+            if (processorRef.current) {
+              try {
+                processorRef.current.onaudioprocess = null;
+                if (sourceRef.current) {
+                  sourceRef.current.disconnect();
+                }
+                processorRef.current.disconnect();
+              } catch (e) {
+                // Ignore cleanup errors
+              }
+            }
           },
           onmessage: async (message: LiveServerMessage) => {
             // Transcript handling
@@ -232,20 +417,133 @@ export const BotInterviewPage = () => {
                 setBotStatus('listening');
             }
           },
-          onclose: () => setIsConnected(false),
-          onerror: (err) => setIsConnected(false)
+          onclose: (event?: any) => {
+            console.log('WebSocket closed', event);
+            isConnectedRef.current = false;
+            setIsConnected(false);
+            sessionRef.current = null;
+            // Clean up audio processing nodes
+            if (workletNodeRef.current) {
+              try {
+                workletNodeRef.current.port.onmessage = null;
+                if (sourceRef.current) {
+                  sourceRef.current.disconnect();
+                }
+                workletNodeRef.current.disconnect();
+              } catch (e) {
+                // Ignore cleanup errors
+              }
+            }
+            if (processorRef.current) {
+              try {
+                processorRef.current.onaudioprocess = null;
+                if (sourceRef.current) {
+                  sourceRef.current.disconnect();
+                }
+                processorRef.current.disconnect();
+              } catch (e) {
+                // Ignore cleanup errors
+              }
+            }
+          }
         }
       });
-      sessionRef.current = sessionPromise;
+      sessionPromiseRef.current = sessionPromise;
+      
+      // Store the actual session object once resolved
+      sessionPromise.then((session: any) => {
+        console.log('Session resolved:', session);
+        sessionRef.current = session;
+        // Ensure connection state is set
+        if (session) {
+          isConnectedRef.current = true;
+        }
+      }).catch((err) => {
+        console.error('Session promise rejected:', err);
+        sessionRef.current = null;
+        isConnectedRef.current = false;
+        setIsConnected(false);
+      });
     } catch (err) { console.error(err); }
   };
 
   const disconnect = () => {
-    if (sessionRef.current) sessionRef.current.then((s: any) => s.close && s.close());
-    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    if (audioContextRef.current) audioContextRef.current.close();
-    if (outputAudioContextRef.current) outputAudioContextRef.current.close();
+    isConnectedRef.current = false;
     setIsConnected(false);
+    
+    // Disconnect audio processing nodes first to stop sending data
+    if (workletNodeRef.current) {
+      try {
+        workletNodeRef.current.port.onmessage = null;
+        if (sourceRef.current) {
+          sourceRef.current.disconnect();
+        }
+        workletNodeRef.current.disconnect();
+        workletNodeRef.current = null;
+      } catch (e) {
+        console.error("Error disconnecting worklet:", e);
+      }
+    }
+    if (processorRef.current) {
+      try {
+        processorRef.current.onaudioprocess = null;
+        if (sourceRef.current) {
+          sourceRef.current.disconnect();
+        }
+        processorRef.current.disconnect();
+        processorRef.current = null;
+      } catch (e) {
+        console.error("Error disconnecting processor:", e);
+      }
+    }
+    
+    // Close session
+    if (sessionRef.current && typeof sessionRef.current.close === 'function') {
+      try {
+        sessionRef.current.close();
+      } catch (e) {
+        // Ignore errors when closing already closed session
+      }
+      sessionRef.current = null;
+    }
+    
+    // Also handle promise-based session
+    if (sessionPromiseRef.current) {
+      sessionPromiseRef.current.then((s: any) => {
+        if (s && typeof s.close === 'function') {
+          try {
+            s.close();
+          } catch (e) {
+            // Ignore errors when closing already closed session
+          }
+        }
+      }).catch(() => {
+        // Ignore promise rejections
+      });
+      sessionPromiseRef.current = null;
+    }
+    
+    // Stop media stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    
+    // Close audio contexts
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
+    if (outputAudioContextRef.current) {
+      outputAudioContextRef.current.close().catch(() => {});
+      outputAudioContextRef.current = null;
+    }
+    
+    // Stop all audio sources
+    sourcesRef.current.forEach(s => {
+      try { s.stop(); } catch(e) {}
+    });
+    sourcesRef.current.clear();
   };
 
   const handleEndSession = () => {
@@ -376,7 +674,10 @@ export const BotInterviewPage = () => {
                      <div className={cn("absolute inset-0 rounded-full border-4 border-red-500 animate-ping opacity-20", botStatus === 'listening' ? "block" : "hidden")} />
                      
                      <button 
-                        onClick={() => setIsMicOn(!isMicOn)}
+                        onClick={() => {
+                          isMicOnRef.current = !isMicOn;
+                          setIsMicOn(!isMicOn);
+                        }}
                         className={cn(
                            "relative z-10 w-20 h-20 rounded-full flex items-center justify-center transition-all border-4 border-white shadow-xl",
                            isMicOn 
