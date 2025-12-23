@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { GoogleGenAI, LiveServerMessage, Modality, type Blob as GenAIBlob } from '@google/genai';
-import { Mic, MicOff, PhoneOff, User, Bot, Volume2, MoreHorizontal, LogOut, PauseCircle, PlayCircle, StopCircle, Radio } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, User, Bot, Volume2, MoreHorizontal, LogOut, PauseCircle, PlayCircle, StopCircle, Radio, Loader2 } from 'lucide-react';
 import { useVoiceBotStore } from '../../../store/voiceBotStore';
 import { Button } from '../../../components/ui/Button';
 import { useToast } from '../../../components/ui/Toast';
@@ -81,6 +81,8 @@ export const BotInterviewPage = () => {
   
   // Session State
   const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [isMicOn, setIsMicOn] = useState(true);
   const [transcript, setTranscript] = useState<BotTranscriptItem[]>([]);
   const [duration, setDuration] = useState(0);
@@ -101,6 +103,7 @@ export const BotInterviewPage = () => {
   const sourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
   const isConnectedRef = useRef<boolean>(false);
   const isMicOnRef = useRef<boolean>(true);
+  const disconnectRef = useRef<(() => void) | null>(null);
 
   // Transcript Buffer Refs
   const currentInputTransRef = useRef('');
@@ -121,7 +124,10 @@ export const BotInterviewPage = () => {
   }, [isConnected]);
 
   useEffect(() => {
-    return () => disconnect();
+    return () => {
+      // Call disconnect through ref to avoid temporal dead zone
+      disconnectRef.current?.();
+    };
   }, []);
 
   if (!activeConfig) {
@@ -135,15 +141,34 @@ export const BotInterviewPage = () => {
 
       const outputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       outputAudioContextRef.current = outputCtx;
+
+      // Resume AudioContexts (required by modern browsers after user interaction)
+      if (inputCtx.state === 'suspended') {
+        await inputCtx.resume();
+        console.log('Input AudioContext resumed');
+      }
+      if (outputCtx.state === 'suspended') {
+        await outputCtx.resume();
+        console.log('Output AudioContext resumed');
+      }
+
       const outputNode = outputCtx.createGain();
       outputNode.connect(outputCtx.destination);
       outputNodeRef.current = outputNode;
 
+      console.log('Requesting microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      
+      console.log('Microphone access granted, tracks:', stream.getAudioTracks().length);
+
+      // Log available audio tracks
+      stream.getAudioTracks().forEach((track, i) => {
+        console.log(`Audio track ${i}: ${track.label}, enabled: ${track.enabled}, muted: ${track.muted}`);
+      });
+
       const source = inputCtx.createMediaStreamSource(stream);
       sourceRef.current = source;
+      console.log('MediaStreamSource created');
       
       // Try AudioWorklet first, fallback to ScriptProcessorNode if not supported
       let useWorklet = false;
@@ -292,36 +317,50 @@ export const BotInterviewPage = () => {
   };
 
   const connect = async () => {
+    setIsConnecting(true);
+
     const success = await initializeAudio();
-    if (!success) return;
+    if (!success) {
+      setIsConnecting(false);
+      addToast('Failed to access microphone. Please check permissions.', 'error');
+      return;
+    }
 
-    const apiKey = process.env.API_KEY || '';
-    if (!apiKey) { alert("API Key missing"); return; }
+    // Access API key - Vite replaces process.env.API_KEY at build time
+    const apiKey = process.env.API_KEY || (import.meta as any).env?.VITE_GOOGLE_API_KEY || '';
+    console.log('=== API KEY DEBUG ===');
+    console.log('API Key found:', apiKey ? `Yes (${apiKey.substring(0, 15)}...)` : 'NO');
+    console.log('process.env.API_KEY:', process.env.API_KEY ? 'set' : 'not set');
+    console.log('VITE_GOOGLE_API_KEY:', (import.meta as any).env?.VITE_GOOGLE_API_KEY ? 'set' : 'not set');
 
+    if (!apiKey) {
+      setIsConnecting(false);
+      addToast('API Key missing. Please configure GEMINI_API_KEY in .env file.', 'error');
+      return;
+    }
+
+    console.log('Creating GoogleGenAI client...');
     const ai = new GoogleGenAI({ apiKey });
-    
+    console.log('Connecting to Gemini Live API...');
+
+    // Use the correct Gemini Live API model
+    const modelName = 'gemini-2.0-flash-live-001';
     const config = {
-      model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+      model: modelName,
       config: {
         responseModalities: [Modality.AUDIO],
-        speechConfig: { 
-          voiceConfig: { 
-            prebuiltVoiceConfig: { 
-              voiceName: 'Zephyr' 
-            } 
-          } 
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: {
+              voiceName: 'Aoede'
+            }
+          }
         },
-        systemInstruction: activeConfig.context || `You are a helpful interviewer conducting a ${activeConfig.topic} interview.`,
-        inputAudioTranscription: { 
-          model: "gemini-2.5-flash" 
-        },
-        outputAudioTranscription: { 
-          model: "gemini-2.5-flash" 
-        },
+        systemInstruction: activeConfig.context || `You are a helpful interviewer conducting a ${activeConfig.topic} interview. Start by greeting the candidate and asking your first question.`,
       }
     };
-    
-    console.log('Connecting with config:', JSON.stringify(config, null, 2));
+
+    console.log('Connecting with model:', modelName);
 
     try {
       const sessionPromise = ai.live.connect({
@@ -334,14 +373,17 @@ export const BotInterviewPage = () => {
             setTimeout(() => {
               isConnectedRef.current = true;
               setIsConnected(true);
+              setIsConnecting(false);
               setTranscript([{ id: 'init', role: 'model', text: "Hello! I'm your AI interviewer. Shall we begin?", timestamp: Date.now() }]);
               setBotStatus('speaking');
+              addToast('Connected to AI interviewer!', 'success');
             }, 100);
           },
           onerror: (err: any) => {
             console.error('WebSocket error:', err);
             isConnectedRef.current = false;
             setIsConnected(false);
+            setIsConnecting(false);
             sessionRef.current = null;
             addToast('Connection error. Please try again.', 'error');
             // Clean up audio processing nodes on error
@@ -421,6 +463,7 @@ export const BotInterviewPage = () => {
             console.log('WebSocket closed', event);
             isConnectedRef.current = false;
             setIsConnected(false);
+            setIsConnecting(false);
             sessionRef.current = null;
             // Clean up audio processing nodes
             if (workletNodeRef.current) {
@@ -463,8 +506,14 @@ export const BotInterviewPage = () => {
         sessionRef.current = null;
         isConnectedRef.current = false;
         setIsConnected(false);
+        setIsConnecting(false);
+        addToast('Failed to connect. Please try again.', 'error');
       });
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+      setIsConnecting(false);
+      addToast('Connection failed. Please try again.', 'error');
+    }
   };
 
   const disconnect = () => {
@@ -546,6 +595,9 @@ export const BotInterviewPage = () => {
     sourcesRef.current.clear();
   };
 
+  // Store disconnect in ref for cleanup useEffect
+  disconnectRef.current = disconnect;
+
   const handleEndSession = () => {
     disconnect();
     const sessionId = saveBotSession(transcript, duration);
@@ -560,13 +612,20 @@ export const BotInterviewPage = () => {
       <header className="flex-shrink-0 h-16 bg-brand-purple flex items-center justify-between px-6 shadow-md z-20">
          <div className="flex items-center gap-4">
             <div className="relative">
-               <div className={cn("w-3 h-3 rounded-full", isConnected ? "bg-red-500 animate-pulse" : "bg-slate-400")} />
-               {isConnected && <div className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-75"></div>}
+               <div className={cn(
+                  "w-3 h-3 rounded-full",
+                  isConnected ? (isPaused ? "bg-orange-500" : "bg-red-500 animate-pulse") :
+                  isConnecting ? "bg-yellow-500 animate-pulse" : "bg-slate-400"
+               )} />
+               {isConnected && !isPaused && <div className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-75"></div>}
             </div>
             <div>
                <h1 className="text-white font-bold text-lg tracking-tight">Live Interview</h1>
                <div className="flex items-center gap-2 text-xs text-brand-lavender">
-                  <span>{isConnected ? "Connected" : "Standby"}</span>
+                  <span>
+                     {isConnected ? (isPaused ? "Paused" : "Connected") :
+                      isConnecting ? "Connecting..." : "Standby"}
+                  </span>
                   <span>•</span>
                   <span className="font-mono">{Math.floor(duration/60)}:{(duration%60).toString().padStart(2,'0')}</span>
                </div>
@@ -590,11 +649,22 @@ export const BotInterviewPage = () => {
       >
          {transcript.length === 0 && !isConnected && (
             <div className="h-full flex flex-col items-center justify-center text-center opacity-60">
-               <div className="w-24 h-24 bg-brand-purple/10 rounded-full flex items-center justify-center mb-4">
-                  <Bot className="h-10 w-10 text-brand-purple" />
+               <div className={cn(
+                  "w-24 h-24 rounded-full flex items-center justify-center mb-4",
+                  isConnecting ? "bg-yellow-100" : "bg-brand-purple/10"
+               )}>
+                  {isConnecting ? (
+                     <Loader2 className="h-10 w-10 text-yellow-600 animate-spin" />
+                  ) : (
+                     <Bot className="h-10 w-10 text-brand-purple" />
+                  )}
                </div>
-               <p className="text-slate-500 font-medium">Ready to start your {activeConfig.topic} interview?</p>
-               <p className="text-sm text-slate-400">Press the button below to connect.</p>
+               <p className="text-slate-500 font-medium">
+                  {isConnecting ? "Connecting to AI interviewer..." : `Ready to start your ${activeConfig.topic} interview?`}
+               </p>
+               <p className="text-sm text-slate-400">
+                  {isConnecting ? "Please wait while we establish the connection..." : "Press the microphone button below to connect."}
+               </p>
             </div>
          )}
 
@@ -662,35 +732,38 @@ export const BotInterviewPage = () => {
             {/* Center: Main Record Button */}
             <div className="flex flex-col items-center justify-center -mt-8 relative w-1/3">
                {!isConnected ? (
-                  <button 
+                  <button
                      onClick={connect}
-                     className="w-20 h-20 rounded-full bg-brand-turquoise hover:bg-teal-500 shadow-xl shadow-brand-turquoise/40 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border-4 border-white"
+                     disabled={isConnecting}
+                     className={cn(
+                        "w-20 h-20 rounded-full shadow-xl flex items-center justify-center transition-transform border-4 border-white",
+                        isConnecting
+                           ? "bg-slate-400 cursor-wait"
+                           : "bg-brand-turquoise hover:bg-teal-500 shadow-brand-turquoise/40 hover:scale-105 active:scale-95"
+                     )}
                   >
-                     <Mic className="h-8 w-8 text-white" />
+                     {isConnecting ? (
+                        <Loader2 className="h-8 w-8 text-white animate-spin" />
+                     ) : (
+                        <Mic className="h-8 w-8 text-white" />
+                     )}
                   </button>
                ) : (
                   <div className="relative">
                      {/* Pulse Rings */}
                      <div className={cn("absolute inset-0 rounded-full border-4 border-red-500 animate-ping opacity-20", botStatus === 'listening' ? "block" : "hidden")} />
-                     
-                     <button 
-                        onClick={() => {
-                          isMicOnRef.current = !isMicOn;
-                          setIsMicOn(!isMicOn);
-                        }}
-                        className={cn(
-                           "relative z-10 w-20 h-20 rounded-full flex items-center justify-center transition-all border-4 border-white shadow-xl",
-                           isMicOn 
-                              ? "bg-red-500 hover:bg-red-600 shadow-red-500/30" 
-                              : "bg-slate-400 hover:bg-slate-500"
-                        )}
+
+                     <button
+                        onClick={handleEndSession}
+                        className="relative z-10 w-20 h-20 rounded-full flex items-center justify-center transition-all border-4 border-white shadow-xl bg-red-500 hover:bg-red-600 shadow-red-500/30"
+                        title="Stop Recording & End Session"
                      >
-                        {isMicOn ? <StopCircle className="h-8 w-8 text-white fill-current animate-pulse" /> : <MicOff className="h-8 w-8 text-white" />}
+                        <StopCircle className="h-8 w-8 text-white fill-current" />
                      </button>
                   </div>
                )}
                {/* Waveform Visualizer under button */}
-               {isConnected && isMicOn && (
+               {isConnected && (
                    <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex items-end gap-1 h-8 opacity-50">
                        {[...Array(5)].map((_,i) => (
                            <div 
@@ -705,21 +778,45 @@ export const BotInterviewPage = () => {
 
             {/* Right: Emergency Controls */}
             <div className="flex items-center justify-end gap-3 w-1/3">
-               <Button variant="ghost" size="icon" className="text-slate-400 hover:text-orange-500">
-                  <PauseCircle className="h-6 w-6" />
+               <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                     "transition-colors",
+                     isPaused ? "text-green-500 hover:text-green-600" : "text-slate-400 hover:text-orange-500"
+                  )}
+                  onClick={() => {
+                     setIsPaused(!isPaused);
+                     // Also toggle mic when pausing
+                     if (!isPaused) {
+                        isMicOnRef.current = false;
+                        setIsMicOn(false);
+                     } else {
+                        isMicOnRef.current = true;
+                        setIsMicOn(true);
+                     }
+                     addToast(isPaused ? 'Session resumed' : 'Session paused', 'info');
+                  }}
+                  disabled={!isConnected}
+                  title={isPaused ? "Resume Session" : "Pause Session"}
+               >
+                  {isPaused ? <PlayCircle className="h-6 w-6" /> : <PauseCircle className="h-6 w-6" />}
                </Button>
-               <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-500" onClick={handleEndSession}>
+               <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-500" onClick={handleEndSession} title="End Session">
                   <PhoneOff className="h-6 w-6" />
                </Button>
             </div>
          </div>
          
          {/* Live Text Caption */}
-         {isConnected && (
-            <div className="text-center mt-6 text-xs font-mono text-slate-400">
-               {botStatus === 'speaking' ? "Interviewer speaking..." : botStatus === 'listening' ? "Listening..." : "Live"}
-            </div>
-         )}
+         <div className="text-center mt-6 text-xs font-mono text-slate-400">
+            {isConnecting ? "Connecting to AI interviewer..." :
+             isConnected ? (
+               isPaused ? "Session paused - click resume to continue" :
+               botStatus === 'speaking' ? "Interviewer speaking..." :
+               botStatus === 'listening' ? "Listening..." : "Live"
+             ) : "Click the microphone to start the interview"}
+         </div>
       </div>
     </div>
   );

@@ -3,11 +3,20 @@ import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
+type ToastVariant = ToastType;
 
 interface Toast {
   id: string;
+  title?: string;
   message: string;
   type: ToastType;
+  duration?: number;
+}
+
+interface ShowToastOptions {
+  title?: string;
+  description: string;
+  variant?: ToastVariant;
   duration?: number;
 }
 
@@ -15,6 +24,7 @@ interface ToastContextType {
   toasts: Toast[];
   addToast: (message: string, type?: ToastType, duration?: number) => void;
   removeToast: (id: string) => void;
+  showToast: (options: ShowToastOptions) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -33,7 +43,25 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const addToast = useCallback((message: string, type: ToastType = 'info', duration = 5000) => {
     const id = Math.random().toString(36).substr(2, 9);
     setToasts(prev => [...prev, { id, message, type, duration }]);
-    
+
+    if (duration > 0) {
+      setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+      }, duration);
+    }
+  }, []);
+
+  const showToast = useCallback((options: ShowToastOptions) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const duration = options.duration ?? 5000;
+    setToasts(prev => [...prev, {
+      id,
+      title: options.title,
+      message: options.description,
+      type: options.variant || 'info',
+      duration
+    }]);
+
     if (duration > 0) {
       setTimeout(() => {
         setToasts(prev => prev.filter(t => t.id !== id));
@@ -46,7 +74,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   return (
-    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
+    <ToastContext.Provider value={{ toasts, addToast, removeToast, showToast }}>
       {children}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </ToastContext.Provider>
@@ -98,7 +126,10 @@ const ToastItem: React.FC<{ toast: Toast; onClose: () => void }> = ({ toast, onC
       styles[toast.type]
     )}>
       <Icon className={cn('h-5 w-5 flex-shrink-0 mt-0.5', iconStyles[toast.type])} />
-      <p className="text-sm flex-1">{toast.message}</p>
+      <div className="flex-1">
+        {toast.title && <p className="text-sm font-semibold">{toast.title}</p>}
+        <p className={cn('text-sm', toast.title && 'mt-1')}>{toast.message}</p>
+      </div>
       <button onClick={onClose} className="flex-shrink-0 hover:opacity-70">
         <X className="h-4 w-4" />
       </button>

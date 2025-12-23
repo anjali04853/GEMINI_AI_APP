@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Database, Plus, ToggleLeft, ToggleRight, Edit, Clock, FileText, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { useDatasets, useUpdateDataset } from '../../hooks/api/useAdminApi';
+import { useDatasets, useUpdateDataset, useCreateDataset } from '../../hooks/api/useAdminApi';
 import { useToast } from '../../components/ui/Toast';
 import { getApiError } from '../../lib/api/client';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { cn } from '../../lib/utils';
+import { DatasetFormModal } from '../../components/admin/DatasetFormModal';
 
 export const DatasetManagement = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { data: datasetsData, isLoading, error } = useDatasets();
   const updateDatasetMutation = useUpdateDataset();
+  const createDatasetMutation = useCreateDataset();
   const { showToast } = useToast();
 
   const datasets = datasetsData?.datasets || [];
@@ -35,6 +38,30 @@ export const DatasetManagement = () => {
     }
   };
 
+  const handleCreateDataset = async (data: {
+    name: string;
+    description?: string;
+    type: 'assessment' | 'interview' | 'mixed';
+    category: string;
+  }) => {
+    try {
+      await createDatasetMutation.mutateAsync(data);
+      showToast({
+        title: 'Dataset created',
+        description: 'The dataset has been created successfully.',
+        variant: 'success',
+      });
+    } catch (err) {
+      const apiError = getApiError(err);
+      showToast({
+        title: 'Failed to create dataset',
+        description: apiError.message,
+        variant: 'error',
+      });
+      throw err;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -42,7 +69,10 @@ export const DatasetManagement = () => {
            <h1 className="text-3xl font-bold text-slate-900">Datasets</h1>
            <p className="text-slate-500 text-sm mt-1">Manage question collections and packs.</p>
         </div>
-        <Button className="bg-brand-purple hover:bg-brand-darkPurple text-white shadow-lg shadow-brand-purple/20">
+        <Button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-brand-purple hover:bg-brand-darkPurple text-white shadow-lg shadow-brand-purple/20"
+        >
           <Plus className="mr-2 h-4 w-4" />
           Create Dataset
         </Button>
@@ -135,6 +165,14 @@ export const DatasetManagement = () => {
           ))}
         </div>
       )}
+
+      {/* Create Dataset Modal */}
+      <DatasetFormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateDataset}
+        isLoading={createDatasetMutation.isPending}
+      />
     </div>
   );
 };

@@ -3,21 +3,24 @@ import { Edit, Trash2, Plus, Search, Filter, CheckCircle2, Loader2, AlertCircle 
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { useAdminQuestions, useDeleteQuestion } from '../../hooks/api/useAdminApi';
+import { useAdminQuestions, useDeleteQuestion, useCreateQuestion } from '../../hooks/api/useAdminApi';
 import { useToast } from '../../components/ui/Toast';
 import { getApiError } from '../../lib/api/client';
 import { Badge } from '../../components/ui/Badge';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { cn } from '../../lib/utils';
+import { QuestionFormModal } from '../../components/admin/QuestionFormModal';
 
 export const QuestionManagement = () => {
   const [search, setSearch] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { showToast } = useToast();
 
   const { data: questionsData, isLoading, error } = useAdminQuestions({
     search: search || undefined,
   });
   const deleteQuestionMutation = useDeleteQuestion();
+  const createQuestionMutation = useCreateQuestion();
 
   const questions = questionsData?.questions || [];
 
@@ -38,6 +41,43 @@ export const QuestionManagement = () => {
     }
   };
 
+  const handleCreateQuestion = async (data: {
+    text: string;
+    type: 'multiple-choice' | 'text' | 'rating' | 'ranking' | 'select';
+    topic: string;
+    difficulty: 'Easy' | 'Medium' | 'Hard';
+    category?: string;
+    options?: string[];
+    correctOptionIndex?: number;
+    explanation?: string;
+  }) => {
+    try {
+      await createQuestionMutation.mutateAsync({
+        text: data.text,
+        type: data.type,
+        topic: data.topic,
+        difficulty: data.difficulty,
+        category: data.category,
+        options: data.options,
+        correctAnswer: data.correctOptionIndex,
+        explanation: data.explanation,
+      });
+      showToast({
+        title: 'Question created',
+        description: 'The question has been added successfully.',
+        variant: 'success',
+      });
+    } catch (err) {
+      const apiError = getApiError(err);
+      showToast({
+        title: 'Failed to create question',
+        description: apiError.message,
+        variant: 'error',
+      });
+      throw err;
+    }
+  };
+
   const filtered = questions.filter(q =>
     q.text.toLowerCase().includes(search.toLowerCase()) ||
     (q.topic || '').toLowerCase().includes(search.toLowerCase())
@@ -50,7 +90,10 @@ export const QuestionManagement = () => {
            <h1 className="text-3xl font-bold text-slate-900">Questions</h1>
            <p className="text-slate-500 text-sm mt-1">Manage interview question bank and datasets.</p>
         </div>
-        <Button className="bg-brand-purple hover:bg-brand-darkPurple text-white shadow-lg shadow-brand-purple/20">
+        <Button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-brand-purple hover:bg-brand-darkPurple text-white shadow-lg shadow-brand-purple/20"
+        >
           <Plus className="mr-2 h-4 w-4" />
           Add Question
         </Button>
@@ -174,6 +217,14 @@ export const QuestionManagement = () => {
           </>
         )}
       </Card>
+
+      {/* Add Question Modal */}
+      <QuestionFormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateQuestion}
+        isLoading={createQuestionMutation.isPending}
+      />
     </div>
   );
 };

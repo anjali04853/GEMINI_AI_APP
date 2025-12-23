@@ -86,31 +86,50 @@ export interface AssessmentQuestion {
   id: string;
   text: string;
   type: 'multiple-choice' | 'text' | 'rating' | 'ranking' | 'select';
+  topic?: string;
+  difficulty?: string;
   options?: string[];
+  required?: boolean;
 }
 
 export interface StartAssessmentResponse {
   sessionId: string;
+  assessmentId: string;
+  title: string;
   questions: AssessmentQuestion[];
   durationMinutes: number;
   startedAt: string;
+  expiresAt: string;
 }
 
 export interface SubmitAssessmentRequest {
-  answers: Record<string, string | number | string[]>;
-  durationSeconds?: number;
+  responses: Array<{
+    questionId: string;
+    answer: string | number | string[] | number[];
+  }>;
+  flaggedQuestions?: string[];
+  completedAt?: number;
 }
 
 export interface AssessmentResultResponse {
   sessionId: string;
-  score: number;
-  correctCount: number;
-  totalQuestions: number;
-  completedAt: string;
-  feedback?: Array<{
+  assessmentId?: string;
+  assessmentTitle?: string;
+  status?: string;
+  score: number | null;
+  correctCount: number | null;
+  totalQuestions: number | null;
+  responses?: Record<string, unknown>;
+  flaggedQuestions?: string[];
+  aiAnalysis?: string | null;
+  startedAt?: string;
+  completedAt?: string;
+  durationSeconds?: number | null;
+  breakdown?: Array<{
     questionId: string;
     isCorrect: boolean;
-    explanation?: string;
+    userAnswer: unknown;
+    correctAnswer: unknown;
   }>;
 }
 
@@ -231,36 +250,53 @@ export interface ActivityHistoryResponse {
   total: number;
 }
 
-export interface SkillProficiency {
-  name: string;
-  level: 'Beginner' | 'Intermediate' | 'Advanced';
-  proficiency: number;
-  assessments: number;
-  lastAssessment?: string;
+export interface SkillData {
+  subject: string;
+  value: number;
+  sessions: number;
 }
 
 export interface SkillsResponse {
-  skills: SkillProficiency[];
+  skills: SkillData[];
 }
 
-export interface ActivityTimelineItem {
+export interface ActivityDataItem {
+  label: string;
+  value: number;
   date: string;
-  count: number;
-  type: string;
 }
 
 export interface ActivityTimelineResponse {
-  activities: ActivityTimelineItem[];
+  period: string;
+  data: ActivityDataItem[];
+}
+
+export interface WeeklyProgress {
+  week: string;
+  sessions: number;
+  avgScore: number;
+}
+
+export interface ModeDistribution {
+  mode: string;
+  count: number;
+  avgScore: number;
 }
 
 export interface AnalyticsReportResponse {
   period: string;
-  totalSessions: number;
-  averageScore: number;
-  improvementRate: number;
-  topSkills: string[];
-  weakSkills: string[];
+  generatedAt: string;
+  summary: {
+    totalSessions: number;
+    averageScore: number;
+    improvement: string;
+    totalHours: number;
+    strongestSkill: string;
+    needsImprovement: string;
+  };
   recommendations: string[];
+  weeklyProgress: WeeklyProgress[];
+  modeDistribution: ModeDistribution[];
 }
 
 // ===== Admin Types =====

@@ -1,13 +1,18 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Play, Check, Briefcase, Code, MessageSquare, X, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { useTextInterviewStore } from '../../../store/textInterviewStore';
+import { useStartTextInterview } from '../../../hooks/api/useInterviewsApi';
+import { useToast } from '../../../components/ui/Toast';
+import { getApiError } from '../../../lib/api/client';
 import { TextQuestionType, ExperienceLevel } from '../../../types';
 import { cn } from '../../../lib/utils';
 import { Input } from '../../../components/ui/Input';
+import { mockTextQuestions } from '../../../data/mockInterviewData';
+import { generateId } from '../../../lib/utils';
 
 const TYPES: { id: TextQuestionType; label: string; icon: React.ElementType; color: string; bg: string; borderColor: string; description: string }[] = [
   { 
@@ -47,7 +52,9 @@ const EXPERIENCE_LEVELS: { id: ExperienceLevel; label: string; color: string }[]
 
 export const TextSetupPage = () => {
   const navigate = useNavigate();
-  const startInterview = useTextInterviewStore(state => state.startInterview);
+  const { addToast } = useToast();
+  const setActiveInterview = useTextInterviewStore(state => state.setActiveInterview);
+  const startInterviewMutation = useStartTextInterview();
 
   const [selectedTypes, setSelectedTypes] = useState<TextQuestionType[]>(['Behavioral']);
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>('Mid');
@@ -74,27 +81,75 @@ export const TextSetupPage = () => {
     setCustomTopics(customTopics.filter(t => t !== topic));
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (selectedTypes.length === 0) return;
-    
-    startInterview({
-      types: selectedTypes,
-      questionCount,
-      experienceLevel,
-      customTopics
-    });
-    
-    navigate('/dashboard/interview/text/active');
+
+    try {
+      const response = await startInterviewMutation.mutateAsync({
+        types: selectedTypes,
+        questionCount,
+        experienceLevel,
+        customTopics: customTopics.length > 0 ? customTopics : undefined,
+      } as any);
+
+      // Set the active interview with API data
+      setActiveInterview({
+        sessionId: response.sessionId,
+        questions: response.questions.map(q => ({
+          id: q.id,
+          text: q.text,
+          type: (q.type as TextQuestionType) || 'Behavioral',
+        })),
+        config: {
+          types: selectedTypes,
+          questionCount,
+          experienceLevel,
+          customTopics,
+        },
+      });
+
+      navigate('/dashboard/interview/text/active');
+    } catch (error) {
+      // Fall back to mock data when API fails
+      console.warn('API failed, using mock data:', error);
+
+      // Filter and select mock questions
+      let filtered = mockTextQuestions.filter(q => selectedTypes.includes(q.type));
+      filtered = filtered.sort(() => 0.5 - Math.random());
+      const selectedQuestions = filtered.slice(0, questionCount);
+
+      if (selectedQuestions.length === 0) {
+        addToast('No questions available for the selected types', 'error');
+        return;
+      }
+
+      // Use mock data with a generated session ID
+      setActiveInterview({
+        sessionId: generateId(),
+        questions: selectedQuestions,
+        config: {
+          types: selectedTypes,
+          questionCount,
+          experienceLevel,
+          customTopics,
+        },
+      });
+
+      addToast('Using practice questions (offline mode)', 'info');
+      navigate('/dashboard/interview/text/active');
+    }
   };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-brand-lavender/30 to-brand-offWhite p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/interview')} className="bg-white hover:bg-white/80 shadow-sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
+          <Link to="/dashboard/interview">
+            <Button variant="ghost" size="sm" className="bg-white hover:bg-white/80 shadow-sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+          </Link>
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Text Interview Setup</h1>
             <p className="text-slate-500">Practice written responses for asynchronous interviews.</p>
@@ -227,11 +282,12 @@ export const TextSetupPage = () => {
               </CardContent>
             </Card>
 
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="w-full h-14 bg-brand-purple hover:bg-brand-darkPurple shadow-lg shadow-brand-purple/20"
               onClick={handleStart}
-              disabled={selectedTypes.length === 0}
+              disabled={selectedTypes.length === 0 || startInterviewMutation.isPending}
+              isLoading={startInterviewMutation.isPending}
             >
               Start Interview
               <Play className="ml-2 h-5 w-5 fill-current" />

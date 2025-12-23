@@ -1,16 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { Mic, CheckCircle2, AlertTriangle, ArrowLeft, Play, Headphones, Settings } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { useVoiceInterviewStore } from '../../../store/voiceInterviewStore';
 import { AudioRecorder } from '../../../components/voice/AudioRecorder';
+import { useStartVoiceInterview } from '../../../hooks/api/useInterviewsApi';
+import { useToast } from '../../../components/ui/Toast';
+import { getApiError } from '../../../lib/api/client';
+import { mockTextQuestions } from '../../../data/mockInterviewData';
+import { generateId } from '../../../lib/utils';
+import { TextQuestion } from '../../../types';
 
 export const VoiceSetupPage = () => {
   const navigate = useNavigate();
-  const startInterview = useVoiceInterviewStore(state => state.startInterview);
+  const { addToast } = useToast();
+  const setActiveInterview = useVoiceInterviewStore(state => state.setActiveInterview);
+  const startInterviewMutation = useStartVoiceInterview();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [step, setStep] = useState<1 | 2>(1); // 1: Permission, 2: Test
+  const [isStarting, setIsStarting] = useState(false);
 
   const checkPermission = async () => {
     try {
@@ -25,9 +34,57 @@ export const VoiceSetupPage = () => {
     }
   };
 
-  const handleStart = () => {
-    startInterview({ questionCount: 3 });
-    navigate('/dashboard/interview/voice/active');
+  const handleStart = async () => {
+    setIsStarting(true);
+    const questionCount = 3;
+
+    try {
+      const response = await startInterviewMutation.mutateAsync({
+        questionCount,
+        types: ['Behavioral', 'Situational'],
+      } as any);
+
+      // Set the active interview with API data
+      setActiveInterview({
+        sessionId: response.sessionId,
+        questions: response.questions.map(q => ({
+          id: q.id,
+          text: q.text,
+          type: (q.type as TextQuestion['type']) || 'Behavioral',
+        })),
+        config: { questionCount },
+      });
+
+      navigate('/dashboard/interview/voice/active');
+    } catch (error) {
+      // Fall back to mock data when API fails
+      console.warn('API failed, using mock data:', error);
+
+      // Filter Behavioral and Situational questions for voice
+      let filtered = mockTextQuestions.filter(q =>
+        ['Behavioral', 'Situational'].includes(q.type)
+      );
+      filtered = filtered.sort(() => 0.5 - Math.random());
+      const selectedQuestions = filtered.slice(0, questionCount);
+
+      if (selectedQuestions.length === 0) {
+        addToast('No questions available', 'error');
+        setIsStarting(false);
+        return;
+      }
+
+      // Use mock data with a generated session ID
+      setActiveInterview({
+        sessionId: generateId(),
+        questions: selectedQuestions,
+        config: { questionCount },
+      });
+
+      addToast('Using practice questions (offline mode)', 'info');
+      navigate('/dashboard/interview/voice/active');
+    } finally {
+      setIsStarting(false);
+    }
   };
 
   return (
@@ -35,10 +92,12 @@ export const VoiceSetupPage = () => {
       <div className="max-w-2xl w-full space-y-6">
         
         <div className="flex items-center justify-between mb-2">
-           <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/interview')} className="text-slate-600 hover:text-slate-900 hover:bg-white/50">
-             <ArrowLeft className="h-4 w-4 mr-2" />
-             Exit Setup
-           </Button>
+           <Link to="/dashboard/interview">
+             <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 hover:bg-white/50">
+               <ArrowLeft className="h-4 w-4 mr-2" />
+               Exit Setup
+             </Button>
+           </Link>
            <div className="flex gap-2">
               <div className={`h-2 w-8 rounded-full ${step === 1 ? 'bg-brand-turquoise' : 'bg-brand-turquoise/30'}`} />
               <div className={`h-2 w-8 rounded-full ${step === 2 ? 'bg-brand-turquoise' : 'bg-brand-turquoise/30'}`} />
@@ -121,13 +180,15 @@ export const VoiceSetupPage = () => {
                 </CardContent>
 
                 <CardFooter className="bg-white p-6 border-t border-slate-100 flex justify-between">
-                   <Button variant="ghost" onClick={() => setStep(1)} className="text-slate-400">
+                   <Button variant="ghost" onClick={() => setStep(1)} className="text-slate-400" disabled={isStarting}>
                       <Settings className="h-4 w-4 mr-2" />
                       Check Settings
                    </Button>
-                   <Button 
-                      size="lg" 
+                   <Button
+                      size="lg"
                       onClick={handleStart}
+                      disabled={isStarting}
+                      isLoading={isStarting}
                       className="bg-brand-turquoise hover:bg-teal-500 shadow-lg shadow-brand-turquoise/20"
                    >
                       Start Interview

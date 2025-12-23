@@ -40,8 +40,8 @@ export const queryKeys = {
     summary: () => [...queryKeys.analytics.all, 'summary'] as const,
     history: (filters?: object) => [...queryKeys.analytics.all, 'history', filters] as const,
     skills: () => [...queryKeys.analytics.all, 'skills'] as const,
-    activity: (days?: number) => [...queryKeys.analytics.all, 'activity', days] as const,
-    report: () => [...queryKeys.analytics.all, 'report'] as const,
+    activity: (period?: string) => [...queryKeys.analytics.all, 'activity', period] as const,
+    report: (period?: string) => [...queryKeys.analytics.all, 'report', period] as const,
   },
 
   // Admin

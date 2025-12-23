@@ -1,49 +1,81 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, useParams, Link } from 'react-router-dom';
-import { CheckCircle, AlertTriangle, Download, RefreshCw, Bot, ChevronRight, Trophy, Star, TrendingUp, BookOpen } from 'lucide-react';
+import { CheckCircle, AlertTriangle, RefreshCw, Bot, Trophy, Star, TrendingUp, BookOpen, Loader2 } from 'lucide-react';
 import { useAssessmentStore } from '../../store/assessmentStore';
-import { mockAssessments } from '../../data/mockAssessments';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
+import { useAssessmentResults } from '../../hooks/api/useAssessmentsApi';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { generateResponse } from '../../services/geminiService';
-import { cn } from '../../lib/utils';
 
 export const AssessmentResultsPage = () => {
-  const { id } = useParams<{ id: string }>();
-  const { responses, isFinished } = useAssessmentStore();
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const { activeAssessment, resetAssessment } = useAssessmentStore();
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showConfetti, setShowConfetti] = useState(true);
 
-  const assessment = mockAssessments.find(a => a.id === id);
+  const { data: results, isLoading, error } = useAssessmentResults(sessionId || '');
 
   useEffect(() => {
     const timer = setTimeout(() => setShowConfetti(false), 5000);
     return () => clearTimeout(timer);
   }, []);
 
-  if (!assessment) return <Navigate to="/dashboard/assessments" replace />;
-  const hasResponses = Object.keys(responses).length > 0;
-  
-  const score = hasResponses ? 85 : 0; 
-  const totalQuestions = assessment.questions.length;
-  const correctAnswers = Math.round(totalQuestions * (score / 100));
+  // Clean up assessment state when leaving results page
+  useEffect(() => {
+    return () => {
+      resetAssessment();
+    };
+  }, [resetAssessment]);
+
+  if (!sessionId) return <Navigate to="/dashboard/assessments" replace />;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-brand-purple mx-auto mb-4" />
+          <p className="text-slate-500">Loading results...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !results) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-slate-900 mb-2">Failed to load results</h3>
+          <p className="text-slate-500 mb-4">Please try again later.</p>
+          <Link to="/dashboard/assessments">
+            <Button variant="secondary">Back to Assessments</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const score = results.score ?? 0;
+  const totalQuestions = results.totalQuestions ?? 0;
+  const correctAnswers = results.correctCount ?? 0;
 
   const handleAIAnalysis = async () => {
     setIsAnalyzing(true);
     try {
+      const assessmentTitle = results.assessmentTitle || 'Assessment';
       const prompt = `
-        I completed assessment "${assessment.title}". 
+        I completed assessment "${assessmentTitle}".
         Score: ${score}%.
-        Questions/Answers: ${assessment.questions.map(q => `Q:${q.text} A:${responses[q.id] || 'Skipped'}`).join(' | ')}
-        
+        Correct answers: ${correctAnswers} out of ${totalQuestions}.
+
         Provide:
         1. Two Strengths (bullet points).
         2. Two Areas to Improve (bullet points).
         3. One Career Suggestion.
         Return strictly HTML content (using <ul>, <li>, <strong> tags). No markdown.
       `;
-      
+
       const result = await generateResponse(prompt);
       setAnalysis(result);
     } catch (error) {
@@ -189,12 +221,14 @@ export const AssessmentResultsPage = () => {
                   Back to List
                </Button>
             </Link>
-            <Link to={`/assessments/${id}`} className="flex-1">
-               <Button variant="secondary" className="w-full bg-brand-purple/10 text-brand-purple hover:bg-brand-purple/20 border-transparent">
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Retake
-               </Button>
-            </Link>
+            {results.assessmentId && (
+              <Link to={`/dashboard/assessments/${results.assessmentId}`} className="flex-1">
+                 <Button variant="secondary" className="w-full bg-brand-purple/10 text-brand-purple hover:bg-brand-purple/20 border-transparent">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Retake
+                 </Button>
+              </Link>
+            )}
          </div>
       </div>
     </div>

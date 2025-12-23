@@ -26,15 +26,17 @@ export const analyticsApi = {
     return response.data;
   },
 
-  getActivity: async (days?: number): Promise<ActivityTimelineResponse> => {
+  getActivity: async (period?: '7d' | '30d' | '90d' | 'all'): Promise<ActivityTimelineResponse> => {
     const response = await apiClient.get<ActivityTimelineResponse>('/skillforge/analytics/activity', {
-      params: { days },
+      params: { period },
     });
     return response.data;
   },
 
-  getReport: async (): Promise<AnalyticsReportResponse> => {
-    const response = await apiClient.get<AnalyticsReportResponse>('/skillforge/analytics/report');
+  getReport: async (period?: '7d' | '30d' | '90d' | 'all'): Promise<AnalyticsReportResponse> => {
+    const response = await apiClient.get<AnalyticsReportResponse>('/skillforge/analytics/report', {
+      params: { period },
+    });
     return response.data;
   },
 };

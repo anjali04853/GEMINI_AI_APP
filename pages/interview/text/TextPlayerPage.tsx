@@ -28,6 +28,10 @@ export const TextPlayerPage = () => {
   const [savedStatus, setSavedStatus] = useState<string>('');
   const [elapsedTime, setElapsedTime] = useState(0);
 
+  // Compute currentQ and currentAnswer early so they can be used in useEffect
+  const currentQ = activeQuestions.length > 0 ? activeQuestions[currentQuestionIndex] : null;
+  const currentAnswer = currentQ ? (answers[currentQ.id] || '') : '';
+
   // Auto-save feedback effect
   useEffect(() => {
     if (savedStatus) {
@@ -54,12 +58,9 @@ export const TextPlayerPage = () => {
     return () => clearInterval(autoSaveTimer);
   }, [currentAnswer]);
 
-  if (!isInterviewActive || activeQuestions.length === 0) {
+  if (!isInterviewActive || activeQuestions.length === 0 || !currentQ) {
     return <Navigate to="/dashboard/interview" replace />;
   }
-
-  const currentQ = activeQuestions[currentQuestionIndex];
-  const currentAnswer = answers[currentQ.id] || '';
   const isLast = currentQuestionIndex === activeQuestions.length - 1;
   const wordCount = currentAnswer.trim() ? currentAnswer.trim().split(/\s+/).length : 0;
   

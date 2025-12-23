@@ -4,16 +4,24 @@ import { TextInterviewConfig, TextInterviewSession, TextQuestion } from '../type
 import { mockTextQuestions } from '../data/mockInterviewData';
 import { generateId } from '../lib/utils';
 
+interface ActiveInterviewData {
+  sessionId: string;
+  questions: TextQuestion[];
+  config: TextInterviewConfig;
+}
+
 interface TextInterviewStore {
   sessions: TextInterviewSession[];
-  
+
   activeConfig: TextInterviewConfig | null;
   activeQuestions: TextQuestion[];
+  activeSessionId: string | null; // API session ID
   currentQuestionIndex: number;
   answers: Record<string, string>; // Drafts and finals mixed here, simplistically
   isInterviewActive: boolean;
-  
+
   startInterview: (config: TextInterviewConfig) => void;
+  setActiveInterview: (data: ActiveInterviewData) => void; // For API integration
   updateAnswer: (questionId: string, text: string) => void;
   nextQuestion: () => void;
   prevQuestion: () => void;
@@ -28,9 +36,22 @@ export const useTextInterviewStore = create<TextInterviewStore>()(
       sessions: [],
       activeConfig: null,
       activeQuestions: [],
+      activeSessionId: null,
       currentQuestionIndex: 0,
       answers: {},
       isInterviewActive: false,
+
+      // Set active interview from API response
+      setActiveInterview: (data) => {
+        set({
+          activeSessionId: data.sessionId,
+          activeQuestions: data.questions,
+          activeConfig: data.config,
+          currentQuestionIndex: 0,
+          answers: {},
+          isInterviewActive: true,
+        });
+      },
 
       startInterview: (config) => {
         // Filter questions based on selected types
@@ -70,8 +91,11 @@ export const useTextInterviewStore = create<TextInterviewStore>()(
 
       submitInterview: () => {
         const state = get();
+        // Use API session ID if available, otherwise generate one
+        const sessionId = state.activeSessionId || generateId();
+
         const newSession: TextInterviewSession = {
-          id: generateId(),
+          id: sessionId,
           date: Date.now(),
           config: state.activeConfig!,
           questions: state.activeQuestions,
@@ -79,12 +103,13 @@ export const useTextInterviewStore = create<TextInterviewStore>()(
           feedback: {}
         };
 
-        set((state) => ({
-          sessions: [newSession, ...state.sessions],
-          isInterviewActive: false
+        set((s) => ({
+          sessions: [newSession, ...s.sessions],
+          isInterviewActive: false,
+          activeSessionId: null
         }));
 
-        return newSession.id;
+        return sessionId;
       },
       
       saveFeedback: (sessionId, feedback) => set((state) => ({
@@ -96,6 +121,7 @@ export const useTextInterviewStore = create<TextInterviewStore>()(
       resetInterview: () => set({
         activeConfig: null,
         activeQuestions: [],
+        activeSessionId: null,
         currentQuestionIndex: 0,
         answers: {},
         isInterviewActive: false

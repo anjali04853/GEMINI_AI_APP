@@ -73,13 +73,28 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 
   const startRecording = async () => {
     try {
+      console.log('Requesting microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('Microphone access granted, tracks:', stream.getAudioTracks().length);
+
+      // Log available audio tracks
+      stream.getAudioTracks().forEach((track, i) => {
+        console.log(`Audio track ${i}: ${track.label}, enabled: ${track.enabled}, muted: ${track.muted}`);
+      });
+
       mediaRecorderRef.current = new MediaRecorder(stream);
+      console.log('MediaRecorder created, state:', mediaRecorderRef.current.state);
       audioChunksRef.current = [];
 
       // Audio Context for Visualizer
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       audioContextRef.current = audioCtx;
+
+      // Resume AudioContext (required by modern browsers after user interaction)
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+
       const analyser = audioCtx.createAnalyser();
       analyser.fftSize = 256;
       analyserRef.current = analyser;
@@ -104,24 +119,33 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 
 
       mediaRecorderRef.current.ondataavailable = (event) => {
+        console.log('Audio data available, size:', event.data.size);
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
 
       mediaRecorderRef.current.onstop = () => {
+        console.log('Recording stopped, chunks:', audioChunksRef.current.length);
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        console.log('Created audio blob, size:', audioBlob.size);
         const url = URL.createObjectURL(audioBlob);
         setAudioUrl(url);
         onRecordingComplete(audioBlob, url, transcript, recordingTime);
-        
+
         // Stop all tracks
         stream.getTracks().forEach(track => track.stop());
         cancelAnimationFrame(animationFrameRef.current!);
         setVolumeLevel(0);
       };
 
-      mediaRecorderRef.current.start();
+      mediaRecorderRef.current.onerror = (event: any) => {
+        console.error('MediaRecorder error:', event.error);
+      };
+
+      // Start recording with timeslice to get periodic data
+      mediaRecorderRef.current.start(1000);
+      console.log('Recording started, state:', mediaRecorderRef.current.state);
       
       if (recognitionRef.current) {
         setTranscript(''); 

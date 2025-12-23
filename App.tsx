@@ -114,7 +114,7 @@ const App = () => {
               {/* Assessment Routes */}
               <Route path="assessments" element={<Suspense fallback={<Loading />}><AssessmentListPage /></Suspense>} />
               <Route path="assessments/:id" element={<Suspense fallback={<Loading />}><AssessmentPlayerPage /></Suspense>} />
-              <Route path="assessments/:id/results" element={<Suspense fallback={<Loading />}><AssessmentResultsPage /></Suspense>} />
+              <Route path="assessments/results/:sessionId" element={<Suspense fallback={<Loading />}><AssessmentResultsPage /></Suspense>} />
               
               {/* Interview Prep Routes */}
               <Route path="interview" element={<Suspense fallback={<Loading />}><InterviewDashboard /></Suspense>} />
@@ -125,16 +125,19 @@ const App = () => {
               <Route path="interview/results" element={<Suspense fallback={<Loading />}><QuizResultsPage /></Suspense>} />
               
               {/* Text Mode */}
+              <Route path="interview/text" element={<Navigate to="/dashboard/interview/text/setup" replace />} />
               <Route path="interview/text/setup" element={<Suspense fallback={<Loading />}><TextSetupPage /></Suspense>} />
               <Route path="interview/text/active" element={<Suspense fallback={<Loading />}><TextPlayerPage /></Suspense>} />
               <Route path="interview/text/results" element={<Suspense fallback={<Loading />}><TextResultsPage /></Suspense>} />
-              
+
               {/* Voice Mode */}
+              <Route path="interview/voice" element={<Navigate to="/dashboard/interview/voice/setup" replace />} />
               <Route path="interview/voice/setup" element={<Suspense fallback={<Loading />}><VoiceSetupPage /></Suspense>} />
               <Route path="interview/voice/active" element={<Suspense fallback={<Loading />}><VoicePlayerPage /></Suspense>} />
               <Route path="interview/voice/results" element={<Suspense fallback={<Loading />}><VoiceResultsPage /></Suspense>} />
 
               {/* Bot Mode */}
+              <Route path="interview/bot" element={<Navigate to="/dashboard/interview/bot/setup" replace />} />
               <Route path="interview/bot/setup" element={<Suspense fallback={<Loading />}><BotSetupPage /></Suspense>} />
               <Route path="interview/bot/active" element={<Suspense fallback={<Loading />}><BotInterviewPage /></Suspense>} />
               <Route path="interview/bot/results" element={<Suspense fallback={<Loading />}><BotResultsPage /></Suspense>} />

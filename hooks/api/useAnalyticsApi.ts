@@ -24,16 +24,18 @@ export const useSkillsData = () => {
   });
 };
 
-export const useActivityData = (days?: number) => {
+type Period = '7d' | '30d' | '90d' | 'all';
+
+export const useActivityData = (period?: Period) => {
   return useQuery({
-    queryKey: queryKeys.analytics.activity(days),
-    queryFn: () => analyticsApi.getActivity(days),
+    queryKey: queryKeys.analytics.activity(period),
+    queryFn: () => analyticsApi.getActivity(period),
   });
 };
 
-export const useAnalyticsReport = () => {
+export const useAnalyticsReport = (period?: Period) => {
   return useQuery({
-    queryKey: queryKeys.analytics.report(),
-    queryFn: () => analyticsApi.getReport(),
+    queryKey: queryKeys.analytics.report(period),
+    queryFn: () => analyticsApi.getReport(period),
   });
 };

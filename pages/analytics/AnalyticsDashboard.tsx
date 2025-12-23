@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BarChart2,
@@ -15,51 +15,105 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { useAnalyticsSummary, useSkillsData, useActivityData } from '../../hooks/api/useAnalyticsApi';
+import { useAnalyticsSummary, useSkillsData, useActivityData, useAnalyticsReport } from '../../hooks/api/useAnalyticsApi';
 import { SimpleBarChart, SimpleRadarChart, SimpleTrendChart, HorizontalBarChart, DonutChart } from '../../components/analytics/AnalyticsCharts';
 import { cn } from '../../lib/utils';
 import { Tooltip } from '../../components/ui/Tooltip';
 import { Skeleton } from '../../components/ui/Skeleton';
 
+type Period = '7d' | '30d' | '90d';
+
+const MODE_COLORS: Record<string, string> = {
+  quiz: '#6C63FF',
+  text: '#FF6B9D',
+  voice: '#4ECDC4',
+  bot: '#0EA5E9',
+};
+
+const SKILL_GRADIENTS = [
+  { gradientFrom: '#4ade80', gradientTo: '#22c55e' },
+  { gradientFrom: '#2dd4bf', gradientTo: '#0ea5e9' },
+  { gradientFrom: '#4ECDC4', gradientTo: '#2dd4bf' },
+  { gradientFrom: '#f97316', gradientTo: '#facc15' },
+  { gradientFrom: '#6C63FF', gradientTo: '#a78bfa' },
+];
+
 export const AnalyticsDashboard = () => {
+  const [period, setPeriod] = useState<Period>('7d');
+
   const { data: summary, isLoading: summaryLoading } = useAnalyticsSummary();
   const { data: skillsData, isLoading: skillsLoading } = useSkillsData();
-  const { data: activityData, isLoading: activityLoading } = useActivityData({ days: 7 });
+  const { data: activityData, isLoading: activityLoading } = useActivityData(period);
+  const { data: reportData, isLoading: reportLoading } = useAnalyticsReport(period);
 
-  const isLoading = summaryLoading || skillsLoading || activityLoading;
+  const isLoading = summaryLoading || skillsLoading || activityLoading || reportLoading;
 
   // Extract values from API response with fallbacks
   const totalActivities = summary?.totalActivities || 0;
   const averageScore = summary?.averageScore || 0;
   const totalHours = summary?.totalHours || '0';
   const streakDays = summary?.streakDays || 0;
-  const improvement = summary?.improvement || 0;
+  const improvement = reportData?.summary?.improvement || '0%';
 
-  // Transform skills data for radar chart
-  const skillData = skillsData?.skills?.map(skill => ({
-    subject: skill.name,
-    value: skill.score
-  })) || [];
+  // Skills data for radar chart (API returns { subject, value, sessions })
+  const skillData = skillsData?.skills || [];
 
-  // Mock data for new charts
-  const trendData = [65, 68, 72, 70, 75, 78, 82, 85, 84, 88];
-  
-  const topicPerformance = [
-    { label: 'React Hooks', value: 92, gradientFrom: '#4ade80', gradientTo: '#22c55e' }, // Green
-    { label: 'System Design', value: 78, gradientFrom: '#2dd4bf', gradientTo: '#0ea5e9' }, // Teal to Sky
-    { label: 'CSS Layouts', value: 85, gradientFrom: '#4ECDC4', gradientTo: '#2dd4bf' }, // Turquoise
-    { label: 'Behavioral', value: 65, gradientFrom: '#f97316', gradientTo: '#facc15' }, // Orange to Yellow
-  ];
+  // Transform weekly progress to trend data (array of scores)
+  const trendData = useMemo(() => {
+    if (!reportData?.weeklyProgress?.length) {
+      return []; // Return empty array when no data
+    }
+    return reportData.weeklyProgress.map(w => w.avgScore);
+  }, [reportData?.weeklyProgress]);
 
-  const modeDistribution = [
-    { label: 'Quiz', value: 12, color: '#6C63FF' },
-    { label: 'Text', value: 8, color: '#FF6B9D' },
-    { label: 'Voice', value: 5, color: '#4ECDC4' },
-    { label: 'Bot', value: 3, color: '#0EA5E9' },
-  ];
+  // Transform skills data for topic performance horizontal bar chart
+  const topicPerformance = useMemo(() => {
+    if (!skillsData?.skills?.length) {
+      return []; // Return empty array when no data
+    }
+    return skillsData.skills.slice(0, 5).map((skill, i) => ({
+      label: skill.subject,
+      value: skill.value,
+      ...(SKILL_GRADIENTS[i % SKILL_GRADIENTS.length]),
+    }));
+  }, [skillsData?.skills]);
 
-  // Mock Heatmap Data (approx 12 weeks x 7 days)
-  const heatmapData = Array.from({ length: 84 }, () => Math.floor(Math.random() * 4)); 
+  // Transform mode distribution from report API
+  const modeDistribution = useMemo(() => {
+    if (!reportData?.modeDistribution?.length) {
+      return []; // Return empty array when no data
+    }
+    return reportData.modeDistribution.map(m => ({
+      label: m.mode.charAt(0).toUpperCase() + m.mode.slice(1),
+      value: m.count,
+      color: MODE_COLORS[m.mode] || '#94a3b8',
+    }));
+  }, [reportData?.modeDistribution]);
+
+  // Transform activity data to heatmap (90 days)
+  const heatmapData = useMemo(() => {
+    if (!activityData?.data?.length) {
+      // Return empty array for no data state
+      return Array(84).fill(0);
+    }
+    // Create a map of date -> count
+    const activityMap = new Map(activityData.data.map(d => [d.date, d.value]));
+
+    // Generate last 84 days of data
+    const data: number[] = [];
+    const today = new Date();
+    for (let i = 83; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0]!;
+      const count = activityMap.get(dateStr) || 0;
+      // Normalize to 0-3 range for heatmap
+      data.push(Math.min(3, count));
+    }
+    return data;
+  }, [activityData?.data]);
+
+  const hasNoData = totalActivities === 0; 
 
   return (
     <div className="space-y-8 pb-10">
@@ -72,9 +126,18 @@ export const AnalyticsDashboard = () => {
         </div>
         <div className="flex flex-col sm:flex-row gap-3 items-center">
             <div className="bg-slate-100 p-1 rounded-lg flex text-sm font-medium">
-               <button className="px-3 py-1 rounded-md bg-white shadow-sm text-brand-purple">7 Days</button>
-               <button className="px-3 py-1 rounded-md text-slate-500 hover:text-slate-900">30 Days</button>
-               <button className="px-3 py-1 rounded-md text-slate-500 hover:text-slate-900">3 Months</button>
+               <button
+                 onClick={() => setPeriod('7d')}
+                 className={cn("px-3 py-1 rounded-md transition-all", period === '7d' ? "bg-white shadow-sm text-brand-purple" : "text-slate-500 hover:text-slate-900")}
+               >7 Days</button>
+               <button
+                 onClick={() => setPeriod('30d')}
+                 className={cn("px-3 py-1 rounded-md transition-all", period === '30d' ? "bg-white shadow-sm text-brand-purple" : "text-slate-500 hover:text-slate-900")}
+               >30 Days</button>
+               <button
+                 onClick={() => setPeriod('90d')}
+                 className={cn("px-3 py-1 rounded-md transition-all", period === '90d' ? "bg-white shadow-sm text-brand-purple" : "text-slate-500 hover:text-slate-900")}
+               >3 Months</button>
             </div>
             <Link to="/dashboard/analytics/report">
                 <Button className="bg-brand-purple hover:bg-brand-darkPurple shadow-lg shadow-brand-purple/20">
@@ -123,9 +186,9 @@ export const AnalyticsDashboard = () => {
                    <Skeleton className="h-8 w-16" />
                  ) : (
                    <>
-                     <h3 className="text-2xl font-black text-slate-900">{improvement >= 0 ? '+' : ''}{improvement}%</h3>
+                     <h3 className="text-2xl font-black text-slate-900">{improvement}</h3>
                      <span className="ml-2 text-xs font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded flex items-center">
-                        <ArrowRight className="h-3 w-3 -rotate-45 mr-0.5" /> This Week
+                        <ArrowRight className="h-3 w-3 -rotate-45 mr-0.5" /> {period === '7d' ? 'This Week' : period === '30d' ? 'This Month' : 'This Quarter'}
                      </span>
                    </>
                  )}
@@ -193,7 +256,13 @@ export const AnalyticsDashboard = () => {
                 <CardDescription>Your performance trajectory over the last 10 sessions.</CardDescription>
              </CardHeader>
              <CardContent className="pt-6">
-                <SimpleTrendChart data={trendData} height={250} />
+                {trendData.length > 0 ? (
+                  <SimpleTrendChart data={trendData} height={250} />
+                ) : (
+                  <div className="h-[250px] flex items-center justify-center text-slate-400 text-sm">
+                    Complete some sessions to see your score trend
+                  </div>
+                )}
              </CardContent>
           </Card>
 
@@ -204,7 +273,13 @@ export const AnalyticsDashboard = () => {
                 <CardDescription>Breakdown by subject area.</CardDescription>
              </CardHeader>
              <CardContent>
-                <HorizontalBarChart data={topicPerformance} />
+                {topicPerformance.length > 0 ? (
+                  <HorizontalBarChart data={topicPerformance} />
+                ) : (
+                  <div className="h-[200px] flex items-center justify-center text-slate-400 text-sm">
+                    Complete assessments to see topic breakdown
+                  </div>
+                )}
              </CardContent>
           </Card>
 
@@ -219,15 +294,23 @@ export const AnalyticsDashboard = () => {
                 <CardDescription>Distribution of your practice sessions.</CardDescription>
              </CardHeader>
              <CardContent className="flex flex-col items-center">
-                <DonutChart data={modeDistribution} size={220} />
-                <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-6">
-                    {modeDistribution.map((mode, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm text-slate-600">
-                             <span className="w-3 h-3 rounded-full" style={{ backgroundColor: mode.color }}></span>
-                             {mode.label}
-                        </div>
-                    ))}
-                </div>
+                {modeDistribution.length > 0 ? (
+                  <>
+                    <DonutChart data={modeDistribution} size={220} />
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-6">
+                        {modeDistribution.map((mode, i) => (
+                            <div key={i} className="flex items-center gap-2 text-sm text-slate-600">
+                                 <span className="w-3 h-3 rounded-full" style={{ backgroundColor: mode.color }}></span>
+                                 {mode.label} ({mode.value})
+                            </div>
+                        ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="h-[280px] flex items-center justify-center text-slate-400 text-sm">
+                    Try different interview modes to see distribution
+                  </div>
+                )}
              </CardContent>
           </Card>
 
@@ -238,7 +321,13 @@ export const AnalyticsDashboard = () => {
                 <CardDescription>Balanced assessment of your competencies.</CardDescription>
              </CardHeader>
              <CardContent className="flex justify-center pb-2">
-                <SimpleRadarChart data={skillData} size={280} />
+                {skillData.length > 0 ? (
+                  <SimpleRadarChart data={skillData} size={280} />
+                ) : (
+                  <div className="h-[280px] flex items-center justify-center text-slate-400 text-sm">
+                    Complete assessments to build your skill profile
+                  </div>
+                )}
              </CardContent>
           </Card>
       </div>
